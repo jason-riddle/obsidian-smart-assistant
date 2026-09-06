@@ -7,8 +7,8 @@ import { validateServerName } from '../../../core/mcp/tool-name-utils'
 import SmartComposerPlugin from '../../../main'
 import {
   McpServerParameters,
-  mcpServerParametersSchema,
   McpTransportType,
+  mcpServerParametersSchema,
 } from '../../../types/mcp.types'
 import { ObsidianButton } from '../../common/ObsidianButton'
 import { ObsidianDropdown } from '../../common/ObsidianDropdown'
