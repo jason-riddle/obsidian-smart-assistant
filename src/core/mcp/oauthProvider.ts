@@ -4,13 +4,13 @@ import type {
   OAuthDiscoveryState,
   StoredOAuthClientInformation,
   StoredOAuthTokens,
-} from "@modelcontextprotocol/client"
-import { App, normalizePath } from "obsidian"
+} from '@modelcontextprotocol/client'
+import { App, normalizePath } from 'obsidian'
 
-import { logger } from "../../utils/logger"
+import { logger } from '../../utils/logger'
 
-export const OAUTH_REDIRECT_URL = "obsidian://smart-assistant/oauth/callback"
-export const OAUTH_TOKEN_STORE_PATH = ".smtcmp_oauth_tokens.json"
+export const OAUTH_REDIRECT_URL = 'obsidian://smart-assistant/oauth/callback'
+export const OAUTH_TOKEN_STORE_PATH = '.smtcmp_oauth_tokens.json'
 
 export type ServerOAuthState = {
   tokens?: StoredOAuthTokens
@@ -42,7 +42,7 @@ export class OAuthTokenStore {
     if (this.loaded) {
       return
     }
-    logger.debug("OAuthTokenStore", "load", "Loading OAuth token store...")
+    logger.debug('OAuthTokenStore', 'load', 'Loading OAuth token store...')
     try {
       if (await this.app.vault.adapter.exists(this.filePath)) {
         const content = await this.app.vault.adapter.read(this.filePath)
@@ -51,9 +51,9 @@ export class OAuthTokenStore {
       }
     } catch (error) {
       logger.error(
-        "OAuthTokenStore",
-        "load",
-        "Failed to load OAuth token store",
+        'OAuthTokenStore',
+        'load',
+        'Failed to load OAuth token store',
         error,
       )
     }
@@ -61,7 +61,11 @@ export class OAuthTokenStore {
   }
 
   private async persist(): Promise<void> {
-    logger.debug("OAuthTokenStore", "persist", "Persisting OAuth token store...")
+    logger.debug(
+      'OAuthTokenStore',
+      'persist',
+      'Persisting OAuth token store...',
+    )
     const data: Record<string, ServerOAuthState> = {}
     for (const [key, value] of this.cache) {
       data[key] = value
@@ -71,9 +75,9 @@ export class OAuthTokenStore {
       await this.app.vault.adapter.write(this.filePath, content)
     } catch (error) {
       logger.error(
-        "OAuthTokenStore",
-        "persist",
-        "Failed to persist OAuth token store",
+        'OAuthTokenStore',
+        'persist',
+        'Failed to persist OAuth token store',
         error,
       )
     }
@@ -93,27 +97,33 @@ export class OAuthTokenStore {
     const merged: ServerOAuthState = { ...current }
     if (patch.tokens !== undefined) {
       merged.tokens = patch.tokens
-    } else if (patch.tokens === undefined && "tokens" in patch) {
+    } else if (patch.tokens === undefined && 'tokens' in patch) {
       delete merged.tokens
     }
     if (patch.clientInformation !== undefined) {
       merged.clientInformation = patch.clientInformation
-    } else if (patch.clientInformation === undefined && "clientInformation" in patch) {
+    } else if (
+      patch.clientInformation === undefined &&
+      'clientInformation' in patch
+    ) {
       delete merged.clientInformation
     }
     if (patch.codeVerifier !== undefined) {
       merged.codeVerifier = patch.codeVerifier
-    } else if (patch.codeVerifier === undefined && "codeVerifier" in patch) {
+    } else if (patch.codeVerifier === undefined && 'codeVerifier' in patch) {
       delete merged.codeVerifier
     }
     if (patch.state !== undefined) {
       merged.state = patch.state
-    } else if (patch.state === undefined && "state" in patch) {
+    } else if (patch.state === undefined && 'state' in patch) {
       delete merged.state
     }
     if (patch.discoveryState !== undefined) {
       merged.discoveryState = patch.discoveryState
-    } else if (patch.discoveryState === undefined && "discoveryState" in patch) {
+    } else if (
+      patch.discoveryState === undefined &&
+      'discoveryState' in patch
+    ) {
       delete merged.discoveryState
     }
     this.cache.set(serverName, merged)
@@ -148,9 +158,11 @@ export class McpOAuthProvider implements OAuthClientProvider {
       client_id: staticConfig.clientId,
     }
     if (staticConfig.clientSecret !== undefined) {
-      ;(clientInfo as {
-        client_secret?: string
-      }).client_secret = staticConfig.clientSecret
+      ;(
+        clientInfo as {
+          client_secret?: string
+        }
+      ).client_secret = staticConfig.clientSecret
     }
     provider.staticClientInfo = clientInfo
     const serverInfo = {
@@ -172,16 +184,14 @@ export class McpOAuthProvider implements OAuthClientProvider {
   get clientMetadata(): OAuthClientMetadata {
     return {
       redirect_uris: [OAUTH_REDIRECT_URL],
-      client_name: "Smart Assistant",
-      grant_types: ["authorization_code", "refresh_token"],
-      token_endpoint_auth_method: "none",
-      scope: "",
+      client_name: 'Smart Assistant',
+      grant_types: ['authorization_code', 'refresh_token'],
+      token_endpoint_auth_method: 'none',
+      scope: '',
     }
   }
 
-  async clientInformation(): Promise<
-    StoredOAuthClientInformation | undefined
-  > {
+  async clientInformation(): Promise<StoredOAuthClientInformation | undefined> {
     if (this.staticClientInfo !== undefined) {
       return this.staticClientInfo
     }
@@ -221,7 +231,9 @@ export class McpOAuthProvider implements OAuthClientProvider {
   async state(): Promise<string> {
     const state = await this.store.get(this.serverName)
     if (!state?.state) {
-      throw new Error(`No OAuth state stored for MCP server: ${this.serverName}`)
+      throw new Error(
+        `No OAuth state stored for MCP server: ${this.serverName}`,
+      )
     }
     return state.state
   }
@@ -232,16 +244,14 @@ export class McpOAuthProvider implements OAuthClientProvider {
 
   async redirectToAuthorization(authorizationUrl: URL): Promise<void> {
     logger.info(
-      "McpOAuthProvider",
-      "redirectToAuthorization",
+      'McpOAuthProvider',
+      'redirectToAuthorization',
       `Redirecting to authorization URL: ${authorizationUrl.toString()}`,
     )
-    window.open(authorizationUrl.toString(), "_blank")
+    window.open(authorizationUrl.toString(), '_blank')
   }
 
-  async saveDiscoveryState(
-    discoveryState: OAuthDiscoveryState,
-  ): Promise<void> {
+  async saveDiscoveryState(discoveryState: OAuthDiscoveryState): Promise<void> {
     await this.store.update(this.serverName, { discoveryState })
   }
 
@@ -254,23 +264,23 @@ export class McpOAuthProvider implements OAuthClientProvider {
   }
 
   async invalidateCredentials(
-    scope: "all" | "client" | "tokens" | "verifier" | "discovery",
+    scope: 'all' | 'client' | 'tokens' | 'verifier' | 'discovery',
   ): Promise<void> {
-    if (scope === "all") {
+    if (scope === 'all') {
       await this.store.clear(this.serverName)
       return
     }
     const patch: Partial<ServerOAuthState> = {}
-    if (scope === "client") {
+    if (scope === 'client') {
       patch.clientInformation = undefined
     }
-    if (scope === "tokens") {
+    if (scope === 'tokens') {
       patch.tokens = undefined
     }
-    if (scope === "verifier") {
+    if (scope === 'verifier') {
       patch.codeVerifier = undefined
     }
-    if (scope === "discovery") {
+    if (scope === 'discovery') {
       patch.discoveryState = undefined
     }
     await this.store.update(this.serverName, patch)

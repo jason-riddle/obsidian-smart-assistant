@@ -5,7 +5,7 @@ export const migrateFrom16To17: SettingMigration['migrate'] = (data) => {
   newData.version = 17
 
   const mcp = (newData.mcp ?? {}) as {
-    servers?: Array<{ parameters?: Record<string, unknown> }>
+    servers?: { parameters?: Record<string, unknown> }[]
   }
   const servers = mcp.servers ?? []
 

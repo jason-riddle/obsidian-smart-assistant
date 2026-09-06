@@ -1,9 +1,10 @@
+import { logger } from '../../utils/logger'
+
 import { SETTINGS_SCHEMA_VERSION, SETTING_MIGRATIONS } from './migrations'
 import {
   SmartComposerSettings,
   smartComposerSettingsSchema,
 } from './setting.types'
-import { logger } from '../../utils/logger'
 
 function migrateSettings(
   data: Record<string, unknown>,

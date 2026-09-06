@@ -64,7 +64,12 @@ export default function LexicalContentEditable({
     nodes: [MentionNode],
     editorState: initialEditorState,
     onError: (error) => {
-      logger.error('LexicalContentEditable', 'onError', 'Lexical editor error', error)
+      logger.error(
+        'LexicalContentEditable',
+        'onError',
+        'Lexical editor error',
+        error,
+      )
     },
   }
 
@@ -116,11 +121,7 @@ export default function LexicalContentEditable({
           onChange?.(editorState.toJSON())
         }}
       />
-      {onEnter && (
-        <OnEnterPlugin
-          onEnter={onEnter}
-        />
-      )}
+      {onEnter && <OnEnterPlugin onEnter={onEnter} />}
       <OnMutationPlugin
         nodeClass={MentionNode}
         onMutation={(mutations) => {

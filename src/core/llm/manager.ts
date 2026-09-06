@@ -26,31 +26,14 @@ import { XaiProvider } from './xaiProvider'
 export function getProviderClient({
   providerId,
   settings,
-  setSettings,
 }: {
   providerId: string
   settings: SmartComposerSettings
-  setSettings?: (newSettings: SmartComposerSettings) => void | Promise<void>
 }): BaseLLMProvider<LLMProvider> {
   const provider = settings.providers.find((p) => p.id === providerId)
   if (!provider) {
     throw new Error(`Provider ${providerId} not found`)
   }
-
-  const onProviderUpdate = setSettings
-    ? async (targetProviderId: string, update: Partial<LLMProvider>) => {
-        const updatedProviders: LLMProvider[] = settings.providers.map(
-          (item) =>
-            item.id === targetProviderId
-              ? ({ ...item, ...update } as LLMProvider)
-              : item,
-        )
-        await setSettings({
-          ...settings,
-          providers: updatedProviders,
-        })
-      }
-    : undefined
 
   switch (provider.type) {
     case 'anthropic': {
@@ -95,11 +78,9 @@ export function getProviderClient({
 export function getChatModelClient({
   modelId,
   settings,
-  setSettings,
 }: {
   modelId: string
   settings: SmartComposerSettings
-  setSettings: (newSettings: SmartComposerSettings) => void | Promise<void>
 }): {
   providerClient: BaseLLMProvider<LLMProvider>
   model: ChatModel
@@ -118,7 +99,6 @@ export function getChatModelClient({
   const providerClient = getProviderClient({
     providerId: chatModel.providerId,
     settings,
-    setSettings,
   })
 
   return {

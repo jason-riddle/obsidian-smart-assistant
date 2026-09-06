@@ -17,6 +17,7 @@ import {
   ToolCallResponse,
   ToolCallResponseStatus,
 } from '../../types/tool-call.types'
+import { logger } from '../../utils/logger'
 
 import { BearerAuthProvider } from './bearerAuthProvider'
 import { InvalidToolNameException, McpNotAvailableException } from './exception'
@@ -26,7 +27,6 @@ import {
   parseToolName,
   validateServerName,
 } from './tool-name-utils'
-import { logger } from '../../utils/logger'
 
 type CreateClientResult =
   | McpClient
@@ -35,8 +35,9 @@ type CreateClientResult =
 
 type PendingOAuthFlow = {
   serverName: string
-  transport: import('@modelcontextprotocol/client').StreamableHTTPClientTransport |
-    import('@modelcontextprotocol/client').SSEClientTransport
+  transport:
+    | import('@modelcontextprotocol/client').StreamableHTTPClientTransport
+    | import('@modelcontextprotocol/client').SSEClientTransport
   provider: McpOAuthProvider
   serverConfig: McpServerConfig
 }
@@ -372,12 +373,16 @@ export class McpManager {
       if (!this.oauthTokenStore) {
         return { kind: 'none' }
       }
-      const provider = McpOAuthProvider.createStatic(name, this.oauthTokenStore, {
-        clientId: auth.clientId,
-        clientSecret: auth.clientSecret,
-        authorizationUrl: auth.authorizationUrl,
-        tokenUrl: auth.tokenUrl,
-      })
+      const provider = McpOAuthProvider.createStatic(
+        name,
+        this.oauthTokenStore,
+        {
+          clientId: auth.clientId,
+          clientSecret: auth.clientSecret,
+          authorizationUrl: auth.authorizationUrl,
+          tokenUrl: auth.tokenUrl,
+        },
+      )
       return { kind: 'oauth', provider }
     }
     if (!this.oauthTokenStore) {
@@ -394,14 +399,20 @@ export class McpManager {
     serverParams: McpHttpParameters,
     serverConfig: McpServerConfig,
   ): Promise<CreateClientResult> {
-    const { Client, StreamableHTTPClientTransport, SSEClientTransport, UnauthorizedError } =
-      await import('@modelcontextprotocol/client')
+    const {
+      Client,
+      StreamableHTTPClientTransport,
+      SSEClientTransport,
+      UnauthorizedError,
+    } = await import('@modelcontextprotocol/client')
     const headers = serverParams.headers ?? {}
     const url = new URL(serverParams.url)
     const auth = this.buildAuthProvider(name, serverParams)
 
     const tryConnect = async (
-      TransportClass: typeof StreamableHTTPClientTransport | typeof SSEClientTransport,
+      TransportClass:
+        | typeof StreamableHTTPClientTransport
+        | typeof SSEClientTransport,
     ): Promise<CreateClientResult> => {
       const opts: Record<string, unknown> = { requestInit: { headers } }
       if (auth.kind !== 'none') {
@@ -481,8 +492,9 @@ export class McpManager {
 
   private async registerPendingOAuthFlow(
     name: string,
-    transport: import('@modelcontextprotocol/client').StreamableHTTPClientTransport |
-      import('@modelcontextprotocol/client').SSEClientTransport,
+    transport:
+      | import('@modelcontextprotocol/client').StreamableHTTPClientTransport
+      | import('@modelcontextprotocol/client').SSEClientTransport,
     provider: McpOAuthProvider,
     serverConfig: McpServerConfig,
   ): Promise<CreateClientResult> {

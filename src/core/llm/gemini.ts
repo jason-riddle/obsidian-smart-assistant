@@ -31,7 +31,6 @@ import { BaseLLMProvider } from './base'
 import {
   LLMAPIKeyInvalidException,
   LLMAPIKeyNotSetException,
-  LLMRateLimitExceededException,
 } from './exception'
 
 /**
@@ -542,5 +541,4 @@ export class GeminiProvider extends BaseLLMProvider<
 
     return config
   }
-
 }

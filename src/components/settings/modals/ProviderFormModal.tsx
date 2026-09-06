@@ -3,10 +3,7 @@ import { useState } from 'react'
 
 import { PROVIDER_TYPES_INFO } from '../../../constants'
 import SmartComposerPlugin from '../../../main'
-import {
-  LLMProvider,
-  llmProviderSchema,
-} from '../../../types/provider.types'
+import { LLMProvider, llmProviderSchema } from '../../../types/provider.types'
 import { ObsidianButton } from '../../common/ObsidianButton'
 import { ObsidianDropdown } from '../../common/ObsidianDropdown'
 import { ObsidianSetting } from '../../common/ObsidianSetting'
@@ -139,8 +136,10 @@ function ProviderFormComponent({
             <ObsidianDropdown
               value={formData.type}
               options={Object.fromEntries(
-                Object.entries(PROVIDER_TYPES_INFO)
-                  .map(([key, info]) => [key, info.label]),
+                Object.entries(PROVIDER_TYPES_INFO).map(([key, info]) => [
+                  key,
+                  info.label,
+                ]),
               )}
               onChange={(value: string) =>
                 setFormData(

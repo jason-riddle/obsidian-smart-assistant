@@ -121,7 +121,12 @@ export const deserializeMentionable = (
       }
     }
   } catch (e) {
-    logger.error('mentionable', 'deserializeMentionable', 'Error deserializing mentionable', e)
+    logger.error(
+      'mentionable',
+      'deserializeMentionable',
+      'Error deserializing mentionable',
+      e,
+    )
     return null
   }
 }

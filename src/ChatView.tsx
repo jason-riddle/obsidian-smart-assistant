@@ -82,9 +82,7 @@ export class ChatView extends ItemView {
               }
             >
               <DarkModeProvider>
-                <McpProvider
-                  getMcpManager={() => this.plugin.getMcpManager()}
-                >
+                <McpProvider getMcpManager={() => this.plugin.getMcpManager()}>
                   <SkillsProvider>
                     <QueryClientProvider client={queryClient}>
                       <React.StrictMode>
@@ -93,10 +91,7 @@ export class ChatView extends ItemView {
                             this.containerEl.children[1] as HTMLElement
                           }
                         >
-                          <Chat
-                            ref={this.chatRef}
-                            {...this.initialChatProps}
-                          />
+                          <Chat ref={this.chatRef} {...this.initialChatProps} />
                         </DialogContainerProvider>
                       </React.StrictMode>
                     </QueryClientProvider>

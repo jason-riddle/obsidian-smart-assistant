@@ -602,5 +602,4 @@ https://github.com/glowingjade/obsidian-smart-composer/issues/286`,
     }
     throw new Error(`Unsupported tool choice: ${JSON.stringify(toolChoice)}`)
   }
-
 }

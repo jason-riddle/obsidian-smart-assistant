@@ -79,5 +79,4 @@ export class OpenAICompatibleProvider extends BaseLLMProvider<
     }
     return this.adapter.streamResponse(this.client, formattedRequest, options)
   }
-
 }

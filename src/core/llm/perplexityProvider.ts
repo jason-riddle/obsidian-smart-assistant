@@ -81,5 +81,4 @@ export class PerplexityProvider extends BaseLLMProvider<
 
     return this.adapter.streamResponse(this.client, formattedRequest, options)
   }
-
 }

@@ -2,10 +2,7 @@ import { Settings, Trash2 } from 'lucide-react'
 import { App } from 'obsidian'
 import React from 'react'
 
-import {
-  DEFAULT_PROVIDERS,
-  PROVIDER_TYPES_INFO,
-} from '../../../constants'
+import { DEFAULT_PROVIDERS, PROVIDER_TYPES_INFO } from '../../../constants'
 import { useSettings } from '../../../contexts/settings-context'
 import SmartComposerPlugin from '../../../main'
 import { LLMProvider } from '../../../types/provider.types'

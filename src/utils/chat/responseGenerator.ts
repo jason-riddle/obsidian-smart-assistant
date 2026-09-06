@@ -22,10 +22,10 @@ import {
   ToolCallResponse,
   ToolCallResponseStatus,
 } from '../../types/tool-call.types'
+import { logger } from '../logger'
 
 import { fetchAnnotationTitles } from './fetch-annotation-titles'
 import { PromptGenerator } from './promptGenerator'
-import { logger } from '../logger'
 
 export type ResponseGeneratorParams = {
   providerClient: BaseLLMProvider<LLMProvider>
@@ -81,11 +81,7 @@ export class ResponseGenerator {
     for (let i = 0; i < this.maxAutoIterations; i++) {
       const { toolCallRequests } = await this.streamSingleResponse()
       if (toolCallRequests.length === 0) {
-        logger.info(
-          'ResponseGenerator',
-          'run',
-          'Response generation complete',
-        )
+        logger.info('ResponseGenerator', 'run', 'Response generation complete')
         return
       }
 
@@ -98,9 +94,9 @@ export class ResponseGenerator {
             status: this.isBuiltinTool(toolCall.name)
               ? ToolCallResponseStatus.Running
               : this.mcpManager.isToolExecutionAllowed({
-                  requestToolName: toolCall.name,
-                  conversationId: this.conversationId,
-                })
+                    requestToolName: toolCall.name,
+                    conversationId: this.conversationId,
+                  })
                 ? ToolCallResponseStatus.Running
                 : ToolCallResponseStatus.PendingApproval,
           },
@@ -215,9 +211,7 @@ export class ResponseGenerator {
     Extract<
       ToolCallResponse,
       {
-        status:
-          | ToolCallResponseStatus.Success
-          | ToolCallResponseStatus.Error
+        status: ToolCallResponseStatus.Success | ToolCallResponseStatus.Error
       }
     >
   > {
@@ -269,9 +263,7 @@ export class ResponseGenerator {
       ? await this.mcpManager.listAvailableTools()
       : []
     const builtinTools =
-      this.enableTools && this.skills.length > 0
-        ? [getReadSkillTool()]
-        : []
+      this.enableTools && this.skills.length > 0 ? [getReadSkillTool()] : []
     const mcpRequestTools: RequestTool[] = mcpTools.map((tool) => ({
       type: 'function',
       function: {

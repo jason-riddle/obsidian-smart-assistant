@@ -18,7 +18,6 @@ import { BaseLLMProvider } from './base'
 import {
   LLMAPIKeyInvalidException,
   LLMAPIKeyNotSetException,
-  LLMRateLimitExceededException,
 } from './exception'
 import { OpenAIMessageAdapter } from './openaiMessageAdapter'
 
@@ -98,7 +97,12 @@ export class OpenAIAuthenticatedProvider extends BaseLLMProvider<
 
       return finalResponse
     } catch (error) {
-      logger.error('OpenAIProvider', 'generateResponse', 'Error in generateResponse', error)
+      logger.error(
+        'OpenAIProvider',
+        'generateResponse',
+        'Error in generateResponse',
+        error,
+      )
       if (error instanceof OpenAI.AuthenticationError) {
         throw new LLMAPIKeyInvalidException(
           'OpenAI API key is invalid. Please update it in settings menu.',
@@ -135,7 +139,12 @@ export class OpenAIAuthenticatedProvider extends BaseLLMProvider<
         options,
       )
     } catch (error) {
-      logger.error('OpenAIProvider', 'streamResponse', 'Error in streamResponse', error)
+      logger.error(
+        'OpenAIProvider',
+        'streamResponse',
+        'Error in streamResponse',
+        error,
+      )
       if (error instanceof OpenAI.AuthenticationError) {
         throw new LLMAPIKeyInvalidException(
           'OpenAI API key is invalid. Please update it in settings menu.',
@@ -145,5 +154,4 @@ export class OpenAIAuthenticatedProvider extends BaseLLMProvider<
       throw error
     }
   }
-
 }

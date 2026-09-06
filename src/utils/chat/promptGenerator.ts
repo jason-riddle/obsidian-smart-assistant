@@ -19,13 +19,13 @@ import {
 } from '../../types/mentionable'
 import { PromptLevel } from '../../types/prompt-level.types'
 import { ToolCallResponseStatus } from '../../types/tool-call.types'
+import { logger } from '../logger'
 import {
   getNestedFiles,
   readMultipleTFiles,
   readTFileContent,
 } from '../obsidian'
 
-import { logger } from '../logger'
 import { YoutubeTranscript, isYoutubeUrl } from './youtube-transcript'
 
 export class PromptGenerator {
@@ -411,7 +411,9 @@ Use the \`read_skill\` tool with a skill's name to load its full instructions wh
       )
       return null
     }
-    const customInstruction = (await readTFileContent(file, this.app.vault)).trim()
+    const customInstruction = (
+      await readTFileContent(file, this.app.vault)
+    ).trim()
     if (!customInstruction) {
       return null
     }

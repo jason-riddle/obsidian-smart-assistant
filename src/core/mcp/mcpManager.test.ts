@@ -1,257 +1,255 @@
-import { readFileSync } from "fs"
-import { join } from "path"
+import { readFileSync } from 'fs'
+import { join } from 'path'
 
-import { Client } from "@modelcontextprotocol/client"
-import { StdioClientTransport } from "@modelcontextprotocol/client/stdio"
+import { Client } from '@modelcontextprotocol/client'
+import { StdioClientTransport } from '@modelcontextprotocol/client/stdio'
 
-import {
-  mcpServerParametersSchema,
-} from "../../types/mcp.types"
+import { mcpServerParametersSchema } from '../../types/mcp.types'
 
 const packageJson = JSON.parse(
-  readFileSync(join(__dirname, "..", "..", "..", "package.json"), "utf-8"),
+  readFileSync(join(__dirname, '..', '..', '..', 'package.json'), 'utf-8'),
 ) as {
   dependencies?: Record<string, string>
   devDependencies?: Record<string, string>
 }
 
 const lockfile = JSON.parse(
-  readFileSync(join(__dirname, "..", "..", "..", "package-lock.json"), "utf-8"),
+  readFileSync(join(__dirname, '..', '..', '..', 'package-lock.json'), 'utf-8'),
 ) as { packages?: Record<string, unknown> }
 
-describe("MCP SDK v2 import migration", () => {
-  describe("positive: new import paths resolve", () => {
-    it("should import Client from @modelcontextprotocol/client", () => {
+describe('MCP SDK v2 import migration', () => {
+  describe('positive: new import paths resolve', () => {
+    it('should import Client from @modelcontextprotocol/client', () => {
       expect(Client).toBeDefined()
-      expect(typeof Client).toBe("function")
+      expect(typeof Client).toBe('function')
     })
 
-    it("should import StdioClientTransport from @modelcontextprotocol/client/stdio", () => {
+    it('should import StdioClientTransport from @modelcontextprotocol/client/stdio', () => {
       expect(StdioClientTransport).toBeDefined()
-      expect(typeof StdioClientTransport).toBe("function")
+      expect(typeof StdioClientTransport).toBe('function')
     })
 
-    it("should be able to construct a Client instance", () => {
-      const client = new Client({ name: "test", version: "1.0.0" })
+    it('should be able to construct a Client instance', () => {
+      const client = new Client({ name: 'test', version: '1.0.0' })
       expect(client).toBeInstanceOf(Client)
     })
   })
 
-  describe("negative: old v1 package is removed", () => {
-    it("should not have @modelcontextprotocol/sdk in dependencies", () => {
+  describe('negative: old v1 package is removed', () => {
+    it('should not have @modelcontextprotocol/sdk in dependencies', () => {
       const deps = packageJson.dependencies ?? {}
-      expect(deps).not.toHaveProperty("@modelcontextprotocol/sdk")
+      expect(deps).not.toHaveProperty('@modelcontextprotocol/sdk')
     })
 
-    it("should not have @modelcontextprotocol/sdk in devDependencies", () => {
+    it('should not have @modelcontextprotocol/sdk in devDependencies', () => {
       const devDeps = packageJson.devDependencies ?? {}
-      expect(devDeps).not.toHaveProperty("@modelcontextprotocol/sdk")
+      expect(devDeps).not.toHaveProperty('@modelcontextprotocol/sdk')
     })
 
-    it("should not have @modelcontextprotocol/sdk in package-lock.json top-level packages", () => {
+    it('should not have @modelcontextprotocol/sdk in package-lock.json top-level packages', () => {
       const packages = lockfile.packages ?? {}
       expect(packages).not.toHaveProperty(
-        "node_modules/@modelcontextprotocol/sdk",
+        'node_modules/@modelcontextprotocol/sdk',
       )
     })
   })
 
-  describe("positive: v2 client package is declared", () => {
-    it("should have @modelcontextprotocol/client in dependencies", () => {
+  describe('positive: v2 client package is declared', () => {
+    it('should have @modelcontextprotocol/client in dependencies', () => {
       const deps = packageJson.dependencies ?? {}
-      expect(deps).toHaveProperty("@modelcontextprotocol/client")
+      expect(deps).toHaveProperty('@modelcontextprotocol/client')
     })
 
-    it("should have @modelcontextprotocol/client in package-lock.json", () => {
+    it('should have @modelcontextprotocol/client in package-lock.json', () => {
       const packages = lockfile.packages ?? {}
       expect(packages).toHaveProperty(
-        "node_modules/@modelcontextprotocol/client",
+        'node_modules/@modelcontextprotocol/client',
       )
     })
   })
 })
 
-describe("MCP transport config schema", () => {
-  describe("positive: valid params validate correctly", () => {
+describe('MCP transport config schema', () => {
+  describe('positive: valid params validate correctly', () => {
     it("should validate stdio params with type 'stdio'", () => {
       const params = {
-        type: "stdio",
-        command: "npx",
-        args: ["-y", "@modelcontextprotocol/server-github"],
-        env: { GITHUB_PERSONAL_ACCESS_TOKEN: "tok" },
+        type: 'stdio',
+        command: 'npx',
+        args: ['-y', '@modelcontextprotocol/server-github'],
+        env: { GITHUB_PERSONAL_ACCESS_TOKEN: 'tok' },
       }
       const result = mcpServerParametersSchema.parse(params)
-      expect(result.type).toBe("stdio")
+      expect(result.type).toBe('stdio')
     })
 
     it("should validate http params with type 'http' and a valid URL", () => {
       const params = {
-        type: "http",
-        url: "https://example.com/mcp",
+        type: 'http',
+        url: 'https://example.com/mcp',
       }
       const result = mcpServerParametersSchema.parse(params)
-      expect(result.type).toBe("http")
+      expect(result.type).toBe('http')
     })
 
     it("should validate sse params with type 'sse' and a valid URL", () => {
       const params = {
-        type: "sse",
-        url: "https://example.com/sse",
+        type: 'sse',
+        url: 'https://example.com/sse',
       }
       const result = mcpServerParametersSchema.parse(params)
-      expect(result.type).toBe("sse")
+      expect(result.type).toBe('sse')
     })
 
-    it("should validate http params with headers", () => {
+    it('should validate http params with headers', () => {
       const params = {
-        type: "http",
-        url: "https://example.com/mcp",
-        headers: { Authorization: "Bearer token" },
+        type: 'http',
+        url: 'https://example.com/mcp',
+        headers: { Authorization: 'Bearer token' },
       }
       const result = mcpServerParametersSchema.parse(params)
-      expect(result.type).toBe("http")
+      expect(result.type).toBe('http')
     })
 
-    it("should validate sse params with headers", () => {
+    it('should validate sse params with headers', () => {
       const params = {
-        type: "sse",
-        url: "https://example.com/sse",
-        headers: { Authorization: "Bearer token" },
+        type: 'sse',
+        url: 'https://example.com/sse',
+        headers: { Authorization: 'Bearer token' },
       }
       const result = mcpServerParametersSchema.parse(params)
-      expect(result.type).toBe("sse")
+      expect(result.type).toBe('sse')
     })
   })
 
-  describe("negative: invalid params fail validation", () => {
-    it("should fail validation for http params with an invalid URL", () => {
+  describe('negative: invalid params fail validation', () => {
+    it('should fail validation for http params with an invalid URL', () => {
       const params = {
-        type: "http",
-        url: "not-a-url",
+        type: 'http',
+        url: 'not-a-url',
       }
       expect(() => mcpServerParametersSchema.parse(params)).toThrow()
     })
 
-    it("should fail validation for params without a type field", () => {
+    it('should fail validation for params without a type field', () => {
       const params = {
-        command: "npx",
-        args: ["-y", "server"],
+        command: 'npx',
+        args: ['-y', 'server'],
       }
       expect(() => mcpServerParametersSchema.parse(params)).toThrow()
     })
 
-    it("should fail validation for stdio params without a command", () => {
+    it('should fail validation for stdio params without a command', () => {
       const params = {
-        type: "stdio",
+        type: 'stdio',
       }
       expect(() => mcpServerParametersSchema.parse(params)).toThrow()
     })
 
-    it("should fail validation for http params without a url", () => {
+    it('should fail validation for http params without a url', () => {
       const params = {
-        type: "http",
+        type: 'http',
       }
       expect(() => mcpServerParametersSchema.parse(params)).toThrow()
     })
   })
 
-  describe("MCP auth schema", () => {
-    describe("positive: valid auth configs validate correctly", () => {
-      it("should validate bearer auth with a token", () => {
+  describe('MCP auth schema', () => {
+    describe('positive: valid auth configs validate correctly', () => {
+      it('should validate bearer auth with a token', () => {
         const params = {
-          type: "http",
-          url: "https://example.com/mcp",
-          auth: { type: "bearer", token: "ghp_xxx" },
+          type: 'http',
+          url: 'https://example.com/mcp',
+          auth: { type: 'bearer', token: 'ghp_xxx' },
         }
         const result = mcpServerParametersSchema.parse(params)
-        expect(result.type).toBe("http")
+        expect(result.type).toBe('http')
       })
 
-      it("should validate oauth-static auth with clientId, authorizationUrl and tokenUrl", () => {
+      it('should validate oauth-static auth with clientId, authorizationUrl and tokenUrl', () => {
         const params = {
-          type: "http",
-          url: "https://example.com/mcp",
+          type: 'http',
+          url: 'https://example.com/mcp',
           auth: {
-            type: "oauth-static",
-            clientId: "client-id",
-            authorizationUrl: "https://auth.example.com/authorize",
-            tokenUrl: "https://auth.example.com/token",
+            type: 'oauth-static',
+            clientId: 'client-id',
+            authorizationUrl: 'https://auth.example.com/authorize',
+            tokenUrl: 'https://auth.example.com/token',
           },
         }
         const result = mcpServerParametersSchema.parse(params)
-        expect(result.type).toBe("http")
+        expect(result.type).toBe('http')
       })
 
-      it("should validate oauth-static auth without clientSecret", () => {
+      it('should validate oauth-static auth without clientSecret', () => {
         const params = {
-          type: "sse",
-          url: "https://example.com/sse",
+          type: 'sse',
+          url: 'https://example.com/sse',
           auth: {
-            type: "oauth-static",
-            clientId: "client-id",
-            authorizationUrl: "https://auth.example.com/authorize",
-            tokenUrl: "https://auth.example.com/token",
+            type: 'oauth-static',
+            clientId: 'client-id',
+            authorizationUrl: 'https://auth.example.com/authorize',
+            tokenUrl: 'https://auth.example.com/token',
           },
         }
         const result = mcpServerParametersSchema.parse(params)
-        expect(result.type).toBe("sse")
+        expect(result.type).toBe('sse')
       })
 
-      it("should validate oauth (DCR) auth with just type", () => {
+      it('should validate oauth (DCR) auth with just type', () => {
         const params = {
-          type: "http",
-          url: "https://example.com/mcp",
-          auth: { type: "oauth" },
+          type: 'http',
+          url: 'https://example.com/mcp',
+          auth: { type: 'oauth' },
         }
         const result = mcpServerParametersSchema.parse(params)
-        expect(result.type).toBe("http")
+        expect(result.type).toBe('http')
       })
     })
 
-    describe("negative: invalid auth configs fail validation", () => {
-      it("should fail validation for bearer auth without a token", () => {
+    describe('negative: invalid auth configs fail validation', () => {
+      it('should fail validation for bearer auth without a token', () => {
         const params = {
-          type: "http",
-          url: "https://example.com/mcp",
-          auth: { type: "bearer" },
+          type: 'http',
+          url: 'https://example.com/mcp',
+          auth: { type: 'bearer' },
         }
         expect(() => mcpServerParametersSchema.parse(params)).toThrow()
       })
 
-      it("should fail validation for oauth-static without clientId", () => {
+      it('should fail validation for oauth-static without clientId', () => {
         const params = {
-          type: "http",
-          url: "https://example.com/mcp",
+          type: 'http',
+          url: 'https://example.com/mcp',
           auth: {
-            type: "oauth-static",
-            authorizationUrl: "https://auth.example.com/authorize",
-            tokenUrl: "https://auth.example.com/token",
+            type: 'oauth-static',
+            authorizationUrl: 'https://auth.example.com/authorize',
+            tokenUrl: 'https://auth.example.com/token',
           },
         }
         expect(() => mcpServerParametersSchema.parse(params)).toThrow()
       })
 
-      it("should fail validation for oauth-static without authorizationUrl", () => {
+      it('should fail validation for oauth-static without authorizationUrl', () => {
         const params = {
-          type: "http",
-          url: "https://example.com/mcp",
+          type: 'http',
+          url: 'https://example.com/mcp',
           auth: {
-            type: "oauth-static",
-            clientId: "client-id",
-            tokenUrl: "https://auth.example.com/token",
+            type: 'oauth-static',
+            clientId: 'client-id',
+            tokenUrl: 'https://auth.example.com/token',
           },
         }
         expect(() => mcpServerParametersSchema.parse(params)).toThrow()
       })
 
-      it("should fail validation for oauth-static without tokenUrl", () => {
+      it('should fail validation for oauth-static without tokenUrl', () => {
         const params = {
-          type: "http",
-          url: "https://example.com/mcp",
+          type: 'http',
+          url: 'https://example.com/mcp',
           auth: {
-            type: "oauth-static",
-            clientId: "client-id",
-            authorizationUrl: "https://auth.example.com/authorize",
+            type: 'oauth-static',
+            clientId: 'client-id',
+            authorizationUrl: 'https://auth.example.com/authorize',
           },
         }
         expect(() => mcpServerParametersSchema.parse(params)).toThrow()

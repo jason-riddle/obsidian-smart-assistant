@@ -66,13 +66,18 @@ function argsToString(args: string[] | undefined): string {
 }
 
 function jsonStringifyOrEmpty(value: unknown): string {
-  if (!value || (typeof value === 'object' && Object.keys(value).length === 0)) {
+  if (
+    !value ||
+    (typeof value === 'object' && Object.keys(value).length === 0)
+  ) {
     return ''
   }
   return JSON.stringify(value, null, 2)
 }
 
-function parseJsonOrUndefined(text: string): Record<string, string> | undefined {
+function parseJsonOrUndefined(
+  text: string,
+): Record<string, string> | undefined {
   const trimmed = text.trim()
   if (trimmed.length === 0) {
     return undefined
@@ -117,18 +122,14 @@ function McpServerFormComponent({
 
   const existingParams = existingServer?.parameters
   const initialType: McpTransportType =
-    existingParams && 'type' in existingParams
-      ? existingParams.type
-      : 'stdio'
+    existingParams && 'type' in existingParams ? existingParams.type : 'stdio'
 
   const [name, setName] = useState(existingServer?.id ?? '')
   const [transportType, setTransportType] =
     useState<McpTransportType>(initialType)
 
   const [command, setCommand] = useState(
-    existingParams && 'command' in existingParams
-      ? existingParams.command
-      : '',
+    existingParams && 'command' in existingParams ? existingParams.command : '',
   )
   const [args, setArgs] = useState(
     existingParams && 'args' in existingParams
@@ -152,43 +153,51 @@ function McpServerFormComponent({
   const [authType, setAuthType] = useState<AuthType>(() => {
     if (existingParams && 'auth' in existingParams && existingParams.auth) {
       const t = existingParams.auth.type
-      if (
-        t === 'oauth' ||
-        t === 'oauth-static' ||
-        t === 'bearer'
-      ) {
+      if (t === 'oauth' || t === 'oauth-static' || t === 'bearer') {
         return t
       }
     }
     return 'none'
   })
   const [bearerToken, setBearerToken] = useState(
-    existingParams && 'auth' in existingParams && existingParams.auth?.type === 'bearer'
+    existingParams &&
+      'auth' in existingParams &&
+      existingParams.auth?.type === 'bearer'
       ? existingParams.auth.token
       : '',
   )
   const [oauthClientId, setOauthClientId] = useState(
-    existingParams && 'auth' in existingParams && existingParams.auth?.type === 'oauth-static'
+    existingParams &&
+      'auth' in existingParams &&
+      existingParams.auth?.type === 'oauth-static'
       ? existingParams.auth.clientId
       : '',
   )
   const [oauthClientSecret, setOauthClientSecret] = useState(
-    existingParams && 'auth' in existingParams && existingParams.auth?.type === 'oauth-static'
-      ? existingParams.auth.clientSecret ?? ''
+    existingParams &&
+      'auth' in existingParams &&
+      existingParams.auth?.type === 'oauth-static'
+      ? (existingParams.auth.clientSecret ?? '')
       : '',
   )
   const [oauthAuthorizationUrl, setOauthAuthorizationUrl] = useState(
-    existingParams && 'auth' in existingParams && existingParams.auth?.type === 'oauth-static'
+    existingParams &&
+      'auth' in existingParams &&
+      existingParams.auth?.type === 'oauth-static'
       ? existingParams.auth.authorizationUrl
       : '',
   )
   const [oauthTokenUrl, setOauthTokenUrl] = useState(
-    existingParams && 'auth' in existingParams && existingParams.auth?.type === 'oauth-static'
+    existingParams &&
+      'auth' in existingParams &&
+      existingParams.auth?.type === 'oauth-static'
       ? existingParams.auth.tokenUrl
       : '',
   )
   const [oauthScopes, setOauthScopes] = useState(
-    existingParams && 'auth' in existingParams && existingParams.auth?.type === 'oauth-static'
+    existingParams &&
+      'auth' in existingParams &&
+      existingParams.auth?.type === 'oauth-static'
       ? (existingParams.auth.scopes ?? []).join(', ')
       : '',
   )
@@ -355,7 +364,12 @@ function McpServerFormComponent({
       if (error instanceof Error) {
         new Notice(error.message)
       } else {
-        logger.error('McpServerFormModal', 'saveServer', 'Failed to save MCP server', error)
+        logger.error(
+          'McpServerFormModal',
+          'saveServer',
+          'Failed to save MCP server',
+          error,
+        )
         new Notice('Failed to save MCP server.')
       }
       return null
@@ -377,7 +391,9 @@ function McpServerFormComponent({
     try {
       const mcpManager = await plugin.getMcpManager()
       await mcpManager.reconnectServer(serverName)
-      new Notice('OAuth flow initiated. Complete authorization in your browser.')
+      new Notice(
+        'OAuth flow initiated. Complete authorization in your browser.',
+      )
     } catch (error) {
       new Notice(
         `Failed to initiate OAuth: ${error instanceof Error ? error.message : String(error)}`,
@@ -564,10 +580,7 @@ function McpServerFormComponent({
                 name="OAuth Connection"
                 desc="Save the server first, then click Connect to start the authorization flow in your browser"
               >
-                <ObsidianButton
-                  text="Connect"
-                  onClick={handleOAuthConnect}
-                />
+                <ObsidianButton text="Connect" onClick={handleOAuthConnect} />
               </ObsidianSetting>
             </>
           )}
@@ -576,10 +589,7 @@ function McpServerFormComponent({
               name="OAuth Connection"
               desc="Save the server first, then click Connect to start the authorization flow in your browser"
             >
-              <ObsidianButton
-                text="Connect"
-                onClick={handleOAuthConnect}
-              />
+              <ObsidianButton text="Connect" onClick={handleOAuthConnect} />
             </ObsidianSetting>
           )}
         </>

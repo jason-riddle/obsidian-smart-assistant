@@ -33,9 +33,7 @@ describe('Migration from v17 to v18', () => {
       systemPrompt: 'You are a helpful assistant',
     }
     const result = migrateFrom17To18(oldSettings)
-    expect(
-      (result as { systemPrompt?: unknown }).systemPrompt,
-    ).toBeUndefined()
+    expect((result as { systemPrompt?: unknown }).systemPrompt).toBeUndefined()
   })
 
   it('should handle missing systemPrompt field', () => {
@@ -44,8 +42,6 @@ describe('Migration from v17 to v18', () => {
     }
     const result = migrateFrom17To18(oldSettings)
     expect(result.systemPromptFile).toBe('')
-    expect(
-      (result as { systemPrompt?: unknown }).systemPrompt,
-    ).toBeUndefined()
+    expect((result as { systemPrompt?: unknown }).systemPrompt).toBeUndefined()
   })
 })

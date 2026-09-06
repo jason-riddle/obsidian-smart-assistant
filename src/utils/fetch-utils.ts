@@ -37,7 +37,12 @@ export async function fetchUrlTitle(url: string): Promise<string | null> {
 
     return title
   } catch (error) {
-    logger.warn('fetch-utils', 'fetchUrlTitle', `Failed to fetch title for ${url}`, error)
+    logger.warn(
+      'fetch-utils',
+      'fetchUrlTitle',
+      `Failed to fetch title for ${url}`,
+      error,
+    )
     return null
   }
 }

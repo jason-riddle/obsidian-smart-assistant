@@ -1,15 +1,16 @@
-import { App, EventRef, normalizePath } from "obsidian"
+import { App, EventRef, normalizePath } from 'obsidian'
 
-import { logger } from "../../utils/logger"
-import { BUNDLED_SKILLS } from "./bundledSkills"
+import { logger } from '../../utils/logger'
+
+import { BUNDLED_SKILLS } from './bundledSkills'
 import {
   Skill,
   SkillFrontmatter,
   VAULT_SKILLS_DIR,
   skillFrontmatterSchema,
-} from "./types"
+} from './types'
 
-const SKILL_FILE_NAME = "SKILL.md"
+const SKILL_FILE_NAME = 'SKILL.md'
 const DEBOUNCE_MS = 500
 
 function parseFrontmatter(content: string): {
@@ -24,8 +25,8 @@ function parseFrontmatter(content: string): {
   const body = match[2]
   const frontmatter: Record<string, unknown> = {}
   for (const line of yamlBlock.split(/\r?\n/)) {
-    if (line.trim() === "") continue
-    const colonIndex = line.indexOf(":")
+    if (line.trim() === '') continue
+    const colonIndex = line.indexOf(':')
     if (colonIndex === -1) continue
     const key = line.slice(0, colonIndex).trim()
     const value = line.slice(colonIndex + 1).trim()
@@ -35,8 +36,8 @@ function parseFrontmatter(content: string): {
 }
 
 function getDirName(path: string): string {
-  const parts = path.replace(/\\/g, "/").split("/")
-  const dir = parts.length > 1 ? parts[parts.length - 2] : ""
+  const parts = path.replace(/\\/g, '/').split('/')
+  const dir = parts.length > 1 ? parts[parts.length - 2] : ''
   return dir
 }
 
@@ -52,12 +53,12 @@ export class SkillManager {
   }
 
   public async loadSkills(): Promise<Skill[]> {
-    logger.info("SkillManager", "loadSkills", "Loading skills...")
+    logger.info('SkillManager', 'loadSkills', 'Loading skills...')
     const vaultSkills = await this.loadVaultSkills()
     const bundledSkills = BUNDLED_SKILLS
     logger.debug(
-      "SkillManager",
-      "loadSkills",
+      'SkillManager',
+      'loadSkills',
       `Found ${vaultSkills.length} vault skills, ${bundledSkills.length} bundled skills`,
     )
     const skillsByName = new Map<string, Skill>()
@@ -71,8 +72,8 @@ export class SkillManager {
       a.name.localeCompare(b.name),
     )
     logger.info(
-      "SkillManager",
-      "loadSkills",
+      'SkillManager',
+      'loadSkills',
       `Loaded ${this.skills.length} skills total`,
     )
     this.notifySubscribers()
@@ -90,14 +91,18 @@ export class SkillManager {
   public parseSkillFile(
     content: string,
     path: string,
-    source: "vault" | "bundled",
+    source: 'vault' | 'bundled',
   ): Skill {
-    logger.debug("SkillManager", "parseSkillFile", `Parsing skill file: ${path}`)
+    logger.debug(
+      'SkillManager',
+      'parseSkillFile',
+      `Parsing skill file: ${path}`,
+    )
     const { frontmatter: rawFrontmatter, body } = parseFrontmatter(content)
     const parsed = skillFrontmatterSchema.safeParse(rawFrontmatter)
     if (!parsed.success) {
       throw new Error(
-        `Invalid skill frontmatter in ${path}: ${parsed.error.issues.map((i) => i.message).join(", ")}`,
+        `Invalid skill frontmatter in ${path}: ${parsed.error.issues.map((i) => i.message).join(', ')}`,
       )
     }
     const frontmatter: SkillFrontmatter = parsed.data
@@ -136,13 +141,13 @@ export class SkillManager {
     const handler = (_file: unknown) => {
       this.scheduleReload()
     }
-    const createRef = this.app.vault.on("create", (file) => {
+    const createRef = this.app.vault.on('create', (file) => {
       if (this.isUnderSkillsDir(file.path)) handler(file)
     })
-    const modifyRef = this.app.vault.on("modify", (file) => {
+    const modifyRef = this.app.vault.on('modify', (file) => {
       if (this.isUnderSkillsDir(file.path)) handler(file)
     })
-    const deleteRef = this.app.vault.on("delete", (file) => {
+    const deleteRef = this.app.vault.on('delete', (file) => {
       if (this.isUnderSkillsDir(file.path)) handler(file)
     })
     this.vaultEventRefs = [createRef, modifyRef, deleteRef]
@@ -165,8 +170,8 @@ export class SkillManager {
   }
 
   private isUnderSkillsDir(path: string): boolean {
-    const normalized = path.replace(/\\/g, "/")
-    return normalized.startsWith(VAULT_SKILLS_DIR + "/")
+    const normalized = path.replace(/\\/g, '/')
+    return normalized.startsWith(VAULT_SKILLS_DIR + '/')
   }
 
   private scheduleReload(): void {
@@ -205,12 +210,12 @@ export class SkillManager {
         continue
       }
       try {
-        const skill = this.parseSkillFile(content, skillFilePath, "vault")
+        const skill = this.parseSkillFile(content, skillFilePath, 'vault')
         skills.push(skill)
       } catch (error) {
         logger.error(
-          "SkillManager",
-          "loadVaultSkills",
+          'SkillManager',
+          'loadVaultSkills',
           `Failed to parse skill file: ${skillFilePath}`,
           error,
         )

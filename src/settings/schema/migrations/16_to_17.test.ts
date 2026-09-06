@@ -30,7 +30,7 @@ describe('Migration from v16 to v17', () => {
 
     const result = migrateFrom16To17(oldSettings)
     const servers = (
-      result.mcp as { servers: Array<{ parameters: { type: string } }> }
+      result.mcp as { servers: { parameters: { type: string } }[] }
     ).servers
     expect(servers[0].parameters.type).toBe('stdio')
     expect(servers[0].parameters).toMatchObject({
@@ -59,7 +59,7 @@ describe('Migration from v16 to v17', () => {
 
     const result = migrateFrom16To17(oldSettings)
     const servers = (
-      result.mcp as { servers: Array<{ parameters: { type: string } }> }
+      result.mcp as { servers: { parameters: { type: string } }[] }
     ).servers
     expect(servers[0].parameters.type).toBe('http')
   })

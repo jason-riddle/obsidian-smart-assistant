@@ -58,7 +58,6 @@ export function useChatStreamManager({
       return getChatModelClient({
         modelId: settings.chatModelId,
         settings,
-        setSettings,
       })
     } catch (error) {
       if (error instanceof LLMModelNotFoundException) {
@@ -82,7 +81,6 @@ export function useChatStreamManager({
         return getChatModelClient({
           modelId: firstChatModel.id,
           settings,
-          setSettings,
         })
       }
       throw error
@@ -174,7 +172,12 @@ export function useChatStreamManager({
         }).open()
       } else {
         new Notice(error.message)
-        logger.error('useChatStreamManager', 'onError', 'Failed to generate response', error)
+        logger.error(
+          'useChatStreamManager',
+          'onError',
+          'Failed to generate response',
+          error,
+        )
       }
     },
   })

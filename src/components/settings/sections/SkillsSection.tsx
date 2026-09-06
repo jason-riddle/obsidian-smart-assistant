@@ -1,9 +1,9 @@
-import { App } from "obsidian"
-import { useCallback, useEffect, useState } from "react"
+import { App } from 'obsidian'
+import { useCallback, useEffect, useState } from 'react'
 
-import { useSkills } from "../../../contexts/skills-context"
-import { Skill } from "../../../core/skills/types"
-import { ObsidianButton } from "../../common/ObsidianButton"
+import { useSkills } from '../../../contexts/skills-context'
+import { Skill } from '../../../core/skills/types'
+import { ObsidianButton } from '../../common/ObsidianButton'
 
 type SkillsSectionProps = {
   app: App
@@ -32,12 +32,12 @@ export function SkillsSection({ app }: SkillsSectionProps) {
 
       <div className="smtcmp-settings-desc smtcmp-settings-callout">
         <strong>How to use:</strong> Skills are reusable AI instructions
-        discovered from your vault. Place skill files at{" "}
+        discovered from your vault. Place skill files at{' '}
         <code>.agents/skills/&lt;name&gt;/SKILL.md</code> with YAML frontmatter
         (name, description) and a markdown body. Type <code>/</code> in the chat
-        input to insert a skill, or the assistant will use the{" "}
-        <code>read_skill</code> tool to load instructions on demand. Vault skills
-        override bundled skills with the same name.
+        input to insert a skill, or the assistant will use the{' '}
+        <code>read_skill</code> tool to load instructions on demand. Vault
+        skills override bundled skills with the same name.
       </div>
 
       <div className="smtcmp-settings-sub-header-container">
@@ -73,18 +73,12 @@ export function SkillsSection({ app }: SkillsSectionProps) {
   )
 }
 
-function SkillItem({
-  skill,
-  app,
-}: {
-  skill: Skill
-  app: App
-}) {
+function SkillItem({ skill, app }: { skill: Skill; app: App }) {
   const handleOpen = useCallback(() => {
-    if (skill.source === "vault") {
+    if (skill.source === 'vault') {
       const file = app.vault.getAbstractFileByPath(skill.path)
       if (file) {
-        void app.workspace.openLinkText(skill.path, "", false)
+        void app.workspace.openLinkText(skill.path, '', false)
       }
     }
   }, [app, skill.path, skill.source])
@@ -96,7 +90,7 @@ function SkillItem({
           <div>{skill.name}</div>
           <div
             className="smtcmp-settings-desc"
-            style={{ fontSize: "12px", marginTop: "2px" }}
+            style={{ fontSize: '12px', marginTop: '2px' }}
           >
             {skill.description}
           </div>
@@ -111,8 +105,8 @@ function SkillItem({
         <div
           className="smtcmp-skill-path"
           onClick={handleOpen}
-          style={{ cursor: skill.source === "vault" ? "pointer" : "default" }}
-          title={skill.source === "vault" ? "Click to open" : skill.path}
+          style={{ cursor: skill.source === 'vault' ? 'pointer' : 'default' }}
+          title={skill.source === 'vault' ? 'Click to open' : skill.path}
         >
           {skill.path}
         </div>

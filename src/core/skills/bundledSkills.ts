@@ -1,4 +1,4 @@
-import type { Skill } from "./types"
+import type { Skill } from './types'
 
 const summarizeBody = `## Summarize
 
@@ -22,31 +22,31 @@ Extract actionable todo items from the provided content.
 
 export const BUNDLED_SKILLS: Skill[] = [
   {
-    name: "summarize",
+    name: 'summarize',
     description:
-      "Summarize the selected text or current note into a concise summary. Use when the user asks to summarize, condense, or get the key points of content.",
+      'Summarize the selected text or current note into a concise summary. Use when the user asks to summarize, condense, or get the key points of content.',
     frontmatter: {
-      name: "summarize",
+      name: 'summarize',
       description:
-        "Summarize the selected text or current note into a concise summary. Use when the user asks to summarize, condense, or get the key points of content.",
+        'Summarize the selected text or current note into a concise summary. Use when the user asks to summarize, condense, or get the key points of content.',
     },
     body: summarizeBody,
-    source: "bundled",
-    path: "skills/summarize/SKILL.md",
-    dir: "skills/summarize",
+    source: 'bundled',
+    path: 'skills/summarize/SKILL.md',
+    dir: 'skills/summarize',
   },
   {
-    name: "extract-todos",
+    name: 'extract-todos',
     description:
-      "Extract actionable todo items from text or notes. Use when the user asks to find tasks, action items, or follow-ups in content.",
+      'Extract actionable todo items from text or notes. Use when the user asks to find tasks, action items, or follow-ups in content.',
     frontmatter: {
-      name: "extract-todos",
+      name: 'extract-todos',
       description:
-        "Extract actionable todo items from text or notes. Use when the user asks to find tasks, action items, or follow-ups in content.",
+        'Extract actionable todo items from text or notes. Use when the user asks to find tasks, action items, or follow-ups in content.',
     },
     body: extractTodosBody,
-    source: "bundled",
-    path: "skills/extract-todos/SKILL.md",
-    dir: "skills/extract-todos",
+    source: 'bundled',
+    path: 'skills/extract-todos/SKILL.md',
+    dir: 'skills/extract-todos',
   },
 ]

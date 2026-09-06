@@ -37,7 +37,12 @@ export default function MarkdownCodeComponent({
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
-      logger.error('MarkdownCodeComponent', 'handleCopy', 'Failed to copy text', err)
+      logger.error(
+        'MarkdownCodeComponent',
+        'handleCopy',
+        'Failed to copy text',
+        err,
+      )
     }
   }
 

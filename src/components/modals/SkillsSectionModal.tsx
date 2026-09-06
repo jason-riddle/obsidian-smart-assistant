@@ -1,9 +1,9 @@
-import { App } from "obsidian"
+import { App } from 'obsidian'
 
-import { AppProvider } from "../../contexts/app-context"
-import { SkillsProvider } from "../../contexts/skills-context"
-import { ReactModal } from "../common/ReactModal"
-import { SkillsSection } from "../settings/sections/SkillsSection"
+import { AppProvider } from '../../contexts/app-context'
+import { SkillsProvider } from '../../contexts/skills-context'
+import { ReactModal } from '../common/ReactModal'
+import { SkillsSection } from '../settings/sections/SkillsSection'
 
 type SkillsSectionModalProps = {
   app: App
@@ -18,7 +18,7 @@ export class SkillsSectionModal extends ReactModal<SkillsSectionModalProps> {
         app,
       },
     })
-    this.modalEl.style.width = "720px"
+    this.modalEl.style.width = '720px'
   }
 }
 

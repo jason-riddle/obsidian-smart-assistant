@@ -6,12 +6,12 @@ import {
   useEffect,
   useMemo,
   useState,
-} from "react"
+} from 'react'
 
-import { SkillManager } from "../core/skills/skillManager"
-import { Skill } from "../core/skills/types"
+import { SkillManager } from '../core/skills/skillManager'
+import { Skill } from '../core/skills/types'
 
-import { useApp } from "./app-context"
+import { useApp } from './app-context'
 
 export type SkillsContextType = {
   skills: Skill[]
@@ -57,7 +57,7 @@ export function SkillsProvider({ children }: PropsWithChildren) {
 export function useSkills() {
   const context = useContext(SkillsContext)
   if (!context) {
-    throw new Error("useSkills must be used within a SkillsProvider")
+    throw new Error('useSkills must be used within a SkillsProvider')
   }
   return context
 }

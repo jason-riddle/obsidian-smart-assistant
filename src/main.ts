@@ -12,8 +12,8 @@ import {
 } from './settings/schema/setting.types'
 import { parseSmartComposerSettings } from './settings/schema/settings'
 import { SmartComposerSettingTab } from './settings/SettingTab'
-import { getMentionableBlockData } from './utils/obsidian'
 import { logger } from './utils/logger'
+import { getMentionableBlockData } from './utils/obsidian'
 
 export default class SmartComposerPlugin extends Plugin {
   settings: SmartComposerSettings
@@ -233,7 +233,12 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
       await mcpManager.completeOAuthFlow(state, urlParams)
       new Notice('MCP server authentication successful')
     } catch (error) {
-      logger.error('main', 'handleOAuthCallback', 'MCP OAuth callback error', error)
+      logger.error(
+        'main',
+        'handleOAuthCallback',
+        'MCP OAuth callback error',
+        error,
+      )
       new Notice(
         `MCP server authentication failed: ${error instanceof Error ? error.message : String(error)}`,
       )

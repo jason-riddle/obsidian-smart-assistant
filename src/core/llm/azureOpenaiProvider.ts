@@ -56,5 +56,4 @@ export class AzureOpenAIProvider extends BaseLLMProvider<
 
     return this.adapter.streamResponse(this.client, request, options)
   }
-
 }

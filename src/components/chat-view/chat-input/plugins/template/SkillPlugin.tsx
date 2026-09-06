@@ -1,21 +1,17 @@
-import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext"
-import clsx from "clsx"
-import fuzzysort from "fuzzysort"
-import {
-  $createTextNode,
-  COMMAND_PRIORITY_NORMAL,
-  TextNode,
-} from "lexical"
-import { useCallback, useEffect, useMemo, useState } from "react"
-import { createPortal } from "react-dom"
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
+import clsx from 'clsx'
+import fuzzysort from 'fuzzysort'
+import { $createTextNode, COMMAND_PRIORITY_NORMAL, TextNode } from 'lexical'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 
-import { useSkills } from "../../../../../contexts/skills-context"
-import { Skill } from "../../../../../core/skills/types"
-import { MenuOption } from "../shared/LexicalMenu"
+import { useSkills } from '../../../../../contexts/skills-context'
+import { Skill } from '../../../../../core/skills/types'
+import { MenuOption } from '../shared/LexicalMenu'
 import {
   LexicalTypeaheadMenuPlugin,
   useBasicTypeaheadTriggerMatch,
-} from "../typeahead-menu/LexicalTypeaheadMenuPlugin"
+} from '../typeahead-menu/LexicalTypeaheadMenuPlugin'
 
 class SkillTypeaheadOption extends MenuOption {
   name: string
@@ -47,7 +43,7 @@ function SkillMenuItem({
     <li
       key={option.key}
       tabIndex={-1}
-      className={clsx("item", isSelected && "selected")}
+      className={clsx('item', isSelected && 'selected')}
       ref={(el) => option.setRefElement(el)}
       role="option"
       aria-selected={isSelected}
@@ -59,7 +55,7 @@ function SkillMenuItem({
         <div className="text">{option.name}</div>
         <div
           className="smtcmp-settings-desc"
-          style={{ fontSize: "12px", marginTop: "2px" }}
+          style={{ fontSize: '12px', marginTop: '2px' }}
         >
           {option.description}
         </div>
@@ -83,7 +79,7 @@ export default function SkillPlugin() {
     }
     const results = fuzzysort
       .go(queryString, skills, {
-        keys: ["name", "description"],
+        keys: ['name', 'description'],
         threshold: 0.2,
         limit: 20,
         all: true,
@@ -97,7 +93,7 @@ export default function SkillPlugin() {
     [searchResults],
   )
 
-  const checkForTriggerMatch = useBasicTypeaheadTriggerMatch("/", {
+  const checkForTriggerMatch = useBasicTypeaheadTriggerMatch('/', {
     minLength: 0,
   })
 
@@ -136,7 +132,7 @@ export default function SkillPlugin() {
               <div
                 className="smtcmp-popover"
                 style={{
-                  position: "fixed",
+                  position: 'fixed',
                 }}
               >
                 <ul>

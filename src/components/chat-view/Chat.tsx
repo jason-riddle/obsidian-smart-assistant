@@ -85,7 +85,7 @@ export type ChatProps = {
 
 const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
   const app = useApp()
-  const { settings, setSettings } = useSettings()
+  const { settings } = useSettings()
   const { getMcpManager } = useMcp()
   const { skills } = useSkills()
 
@@ -171,7 +171,12 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
       setFocusedMessageId(newInputMessage.id)
     } catch (error) {
       new Notice('Failed to load conversation')
-      logger.error('Chat', 'handleLoadConversation', 'Failed to load conversation', error)
+      logger.error(
+        'Chat',
+        'handleLoadConversation',
+        'Failed to load conversation',
+        error,
+      )
     }
   }
 
@@ -198,11 +203,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
   }
 
   const handleUserMessageSubmit = useCallback(
-    async ({
-      inputChatMessages,
-    }: {
-      inputChatMessages: ChatMessage[]
-    }) => {
+    async ({ inputChatMessages }: { inputChatMessages: ChatMessage[] }) => {
       abortActiveStreams()
 
       // Update the chat history to show the new user message
@@ -277,7 +278,6 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
       const { providerClient, model } = getChatModelClient({
         modelId: settings.applyModelId,
         settings,
-        setSettings,
       })
 
       const updatedFileContent = await applyChangesToFile({
@@ -423,7 +423,12 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
         }
       } catch (error) {
         new Notice('Failed to save chat history')
-        logger.error('Chat', 'updateConversationAsync', 'Failed to save chat history', error)
+        logger.error(
+          'Chat',
+          'updateConversationAsync',
+          'Failed to save chat history',
+          error,
+        )
       }
     }
     updateConversationAsync()
