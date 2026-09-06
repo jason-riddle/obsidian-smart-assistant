@@ -3,6 +3,7 @@ import {
   ChevronDown,
   ChevronUp,
   CircleMinus,
+  Clock,
   Edit,
   Loader2,
   Trash2,
@@ -38,6 +39,25 @@ function getTransportSummary(parameters: McpServerParameters): string {
     return `stdio: ${parameters.command}`
   }
   return `${parameters.type}: ${parameters.url}`
+}
+
+function getAuthSummary(server: McpServerState): string | null {
+  if (
+    server.config.parameters.type !== 'http' &&
+    server.config.parameters.type !== 'sse'
+  ) {
+    return null
+  }
+  if (server.config.parameters.auth?.type !== 'oauth') {
+    return null
+  }
+  if (server.status === McpServerStatus.Connected) {
+    return 'OAuth: Connected'
+  }
+  if (server.status === McpServerStatus.AwaitingAuth) {
+    return 'OAuth: Awaiting authorization'
+  }
+  return 'OAuth: Not connected'
 }
 
 export function McpSection({ app, plugin }: McpSectionProps) {
@@ -177,6 +197,11 @@ function McpServerComponent({
           <span className="smtcmp-mcp-server-transport">
             {getTransportSummary(server.config.parameters)}
           </span>
+          {getAuthSummary(server) && (
+            <span className="smtcmp-mcp-server-transport">
+              {getAuthSummary(server)}
+            </span>
+          )}
         </div>
         <div className="smtcmp-mcp-server-status">
           <McpServerStatusBadge status={server.status} />
@@ -219,8 +244,21 @@ function McpServerComponent({
 function ExpandedServerInfo({ server }: { server: McpServerState }) {
   if (
     server.status === McpServerStatus.Disconnected ||
-    server.status === McpServerStatus.Connecting
+    server.status === McpServerStatus.Connecting ||
+    server.status === McpServerStatus.AwaitingAuth
   ) {
+    if (server.status === McpServerStatus.AwaitingAuth) {
+      return (
+        <div className="smtcmp-server-expanded-info">
+          <div>
+            <div className="smtcmp-server-expanded-info-header">OAuth</div>
+            <div className="smtcmp-server-error-message">
+              Awaiting authorization. Complete the OAuth flow in your browser.
+            </div>
+          </div>
+        </div>
+      )
+    }
     return null
   }
 
@@ -269,6 +307,11 @@ function McpServerStatusBadge({ status }: { status: McpServerStatus }) {
       icon: <CircleMinus size={14} />,
       label: 'Disconnected',
       statusClass: 'smtcmp-mcp-server-status-badge--disconnected',
+    },
+    [McpServerStatus.AwaitingAuth]: {
+      icon: <Clock size={16} />,
+      label: 'Awaiting Auth',
+      statusClass: 'smtcmp-mcp-server-status-badge--awaiting-auth',
     },
   }
 

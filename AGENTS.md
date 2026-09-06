@@ -111,9 +111,66 @@ transport types are supported: **stdio** (default), **http**
   and per-conversation tool permission management. `connectServer`
   branches on `serverParams.type` to select the transport; the http
   branch falls back from `StreamableHTTPClientTransport` to
-  `SSEClientTransport` on connection failure.
+  `SSEClientTransport` on connection failure. For http/sse servers with
+  `auth.type === "oauth"`, an `McpOAuthProvider` is created and passed to
+  the transport. If `client.connect()` throws `UnauthorizedError`, the
+  server enters `McpServerStatus.AwaitingAuth` and the pending OAuth flow
+  is tracked for later completion via the protocol handler.
+- **OAuth provider:** `src/core/mcp/oauthProvider.ts` — Implements the
+  SDK's `OAuthClientProvider` interface. `OAuthTokenStore` persists
+  per-server OAuth state (tokens, client info, PKCE verifier, CSRF state,
+  discovery state) to `.smtcmp_oauth_tokens.json` in the vault.
+  `McpOAuthProvider` wraps the store for a single server. The SDK
+  handles discovery (RFC 9728/8414), DCR (RFC 7591), PKCE (S256),
+  RFC 8707 `resource` parameter, RFC 9207 `iss` validation, token
+  exchange, refresh, and step-up authorization.
 - **Tool dispatch:** `src/utils/chat/responseGenerator.ts` — Calls
   `McpManager.callTool()` during LLM response streaming.
+
+### MCP OAuth 2.1 + DCR Support
+
+Remote MCP servers (http/sse) can use OAuth 2.1 with Dynamic Client
+Registration. The flow is:
+
+1. **Config:** Set `auth: { type: "oauth" }` in the http/sse server
+   parameters (`src/types/mcp.types.ts`).
+2. **Connect:** `McpManager.connectServer()` creates an `McpOAuthProvider`
+   and passes it to the transport via `authProvider`. The SDK performs
+   discovery, DCR, and PKCE setup, then calls
+   `redirectToAuthorization()` which opens the browser via
+   `window.open()`.
+3. **Awaiting auth:** `client.connect()` throws `UnauthorizedError`.
+   The transport is saved in `pendingOAuthFlows` keyed by the OAuth
+   state. The server status is set to `McpServerStatus.AwaitingAuth`.
+4. **Callback:** The `obsidian://smart-assistant/oauth/callback` protocol
+   handler (registered in `src/main.ts`) receives the authorization
+   code. It calls `McpManager.completeOAuthFlow(state, params)` which:
+   - Looks up the pending flow by state
+   - Calls `transport.finishAuth(params)` to exchange the code for
+     tokens (saved by the provider)
+   - Reconnects the server (new transport with the same provider, which
+     now has cached tokens)
+5. **Token refresh:** The SDK handles automatic token refresh on 401
+   responses — the provider's `tokens()` returns cached tokens and the
+   transport refreshes transparently.
+
+**Token storage:** OAuth state is persisted to
+`.smtcmp_oauth_tokens.json` in the vault via `OAuthTokenStore`. Each
+server's state is keyed by server name. Tokens survive across plugin
+reloads.
+
+### Adding a new auth type
+
+To add a new authentication type for http/sse transports:
+
+1. Add a new literal to the `mcpAuthSchema` discriminated union in
+   `src/types/mcp.types.ts` (or create a new schema).
+2. Add a branch in `McpManager.createHttpClient()` / `createSseClient()`
+   in `src/core/mcp/mcpManager.ts` to create the appropriate provider.
+3. Implement the `OAuthClientProvider` interface (or `AuthProvider`) in
+   a new file under `src/core/mcp/`.
+4. If the auth flow uses a callback, register a new protocol handler in
+   `src/main.ts` and add a completion method to `McpManager`.
 
 ### Adding a new MCP transport
 

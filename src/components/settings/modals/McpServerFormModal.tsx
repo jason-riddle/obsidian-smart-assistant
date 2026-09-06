@@ -16,6 +16,13 @@ import { ObsidianSetting } from '../../common/ObsidianSetting'
 import { ObsidianTextInput } from '../../common/ObsidianTextInput'
 import { ReactModal } from '../../common/ReactModal'
 
+type AuthType = 'none' | 'oauth'
+
+const AUTH_OPTIONS: Record<string, string> = {
+  none: 'None',
+  oauth: 'OAuth 2.1',
+}
+
 type McpServerFormComponentProps = {
   plugin: SmartComposerPlugin
   onClose: () => void
@@ -139,6 +146,11 @@ function McpServerFormComponent({
       ? jsonStringifyOrEmpty(existingParams.headers)
       : '',
   )
+  const [authType, setAuthType] = useState<AuthType>(
+    existingParams && 'auth' in existingParams && existingParams.auth?.type === 'oauth'
+      ? 'oauth'
+      : 'none',
+  )
 
   const [validationError, setValidationError] = useState<string | null>(null)
 
@@ -166,8 +178,11 @@ function McpServerFormComponent({
     if (parsedHeaders) {
       params.headers = parsedHeaders
     }
+    if (authType === 'oauth') {
+      params.auth = { type: 'oauth' }
+    }
     return params
-  }, [transportType, command, args, env, url, headers])
+  }, [transportType, command, args, env, url, headers, authType])
 
   const validateParameters = useCallback(() => {
     try {
@@ -197,7 +212,7 @@ function McpServerFormComponent({
     validateParameters()
   }, [validateParameters])
 
-  const handleSubmit = async () => {
+  const saveServer = async (): Promise<string | null> => {
     try {
       const serverName = name.trim()
       if (serverName.length === 0) {
@@ -259,15 +274,38 @@ function McpServerFormComponent({
       }
 
       await plugin.setSettings(newSettings)
-
-      onClose()
+      return serverName
     } catch (error) {
       if (error instanceof Error) {
         new Notice(error.message)
       } else {
         console.error(error)
-        new Notice('Failed to add MCP server.')
+        new Notice('Failed to save MCP server.')
       }
+      return null
+    }
+  }
+
+  const handleSubmit = async () => {
+    const serverName = await saveServer()
+    if (serverName !== null) {
+      onClose()
+    }
+  }
+
+  const handleOAuthConnect = async () => {
+    const serverName = await saveServer()
+    if (serverName === null) {
+      return
+    }
+    try {
+      const mcpManager = await plugin.getMcpManager()
+      await mcpManager.reconnectServer(serverName)
+      new Notice('OAuth flow initiated. Complete authorization in your browser.')
+    } catch (error) {
+      new Notice(
+        `Failed to initiate OAuth: ${error instanceof Error ? error.message : String(error)}`,
+      )
     }
   }
 
@@ -366,6 +404,27 @@ function McpServerFormComponent({
               minRows={HEADERS_PLACEHOLDER.split('\n').length}
             />
           </ObsidianSetting>
+          <ObsidianSetting
+            name="Authentication"
+            desc="OAuth 2.1 uses Dynamic Client Registration (DCR) and PKCE"
+          >
+            <ObsidianDropdown
+              value={authType}
+              options={AUTH_OPTIONS}
+              onChange={(value: string) => setAuthType(value as AuthType)}
+            />
+          </ObsidianSetting>
+          {authType === 'oauth' && (
+            <ObsidianSetting
+              name="OAuth Connection"
+              desc="Save the server first, then click Connect to start the authorization flow in your browser"
+            >
+              <ObsidianButton
+                text="Connect"
+                onClick={handleOAuthConnect}
+              />
+            </ObsidianSetting>
+          )}
         </>
       )}
 
