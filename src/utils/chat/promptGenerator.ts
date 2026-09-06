@@ -1,6 +1,7 @@
 import { App, TFile, htmlToMarkdown, requestUrl } from 'obsidian'
 
 import { editorStateToPlainText } from '../../components/chat-view/chat-input/utils/editor-state-to-plain-text'
+import { DEFAULT_SYSTEM_PROMPT, MINIMAL_SYSTEM_PROMPT } from '../../constants'
 import { Skill } from '../../core/skills/types'
 import { SmartAssistantSettings } from '../../settings/schema/setting.types'
 import {
@@ -17,7 +18,6 @@ import {
   MentionableImage,
   MentionableUrl,
 } from '../../types/mentionable'
-import { PromptLevel } from '../../types/prompt-level.types'
 import { ToolCallResponseStatus } from '../../types/tool-call.types'
 import { logger } from '../logger'
 import {
@@ -27,6 +27,19 @@ import {
 } from '../obsidian'
 
 import { YoutubeTranscript, isYoutubeUrl } from './youtube-transcript'
+
+export function selectSystemPrompt(
+  mode: SmartAssistantSettings['systemPromptMode'],
+  customPrompt: string,
+): string {
+  if (mode === 'minimal') {
+    return MINIMAL_SYSTEM_PROMPT
+  }
+  if (mode === 'custom') {
+    return customPrompt.trim()
+  }
+  return DEFAULT_SYSTEM_PROMPT
+}
 
 export class PromptGenerator {
   private app: App
@@ -84,8 +97,6 @@ export class PromptGenerator {
 
     const systemMessage = this.getSystemMessage()
 
-    const customInstructionMessage = await this.getCustomInstructionMessage()
-
     const currentFile = lastUserMessage.mentionables.find(
       (m) => m.type === 'current-file',
     )?.file
@@ -96,7 +107,6 @@ export class PromptGenerator {
 
     const requestMessages: RequestMessage[] = [
       systemMessage,
-      ...(customInstructionMessage ? [customInstructionMessage] : []),
       ...(currentFileMessage ? [currentFileMessage] : []),
       ...this.getChatHistoryMessages({ messages: compiledMessages }),
     ]
@@ -335,49 +345,31 @@ ${await this.getWebsiteContent(url)}
   }
 
   private getSystemMessage(): RequestMessage {
-    const modelPromptLevel = this.getModelPromptLevel()
-    const systemPrompt = `You are an intelligent assistant to help answer any questions that the user has${modelPromptLevel == PromptLevel.Default ? `, particularly about editing and organizing markdown files in Obsidian` : ''}.
+    const systemPrompt = selectSystemPrompt(
+      this.settings.systemPromptMode,
+      this.settings.systemPrompt,
+    )
 
-1. Please keep your response as concise as possible. Avoid being verbose.
-
-2. Do not lie or make up facts.
-
-3. Format your response in markdown.
-
-${
-  modelPromptLevel == PromptLevel.Default
-    ? `4. Respond in the same language as the user's message.
-
-5. When writing out new markdown blocks, also wrap them with <smtcmp_block> tags. For example:
-<smtcmp_block language="markdown">
-{{ content }}
-</smtcmp_block>
-
-6. When providing markdown blocks for an existing file, add the filename and language attributes to the <smtcmp_block> tags. Restate the relevant section or heading, so the user knows which part of the file you are editing. For example:
-<smtcmp_block filename="path/to/file.md" language="markdown">
-## Section Title
-...
-{{ content }}
-...
-</smtcmp_block>
-
-7. When the user is asking for edits to their markdown, please provide a simplified version of the markdown block emphasizing only the changes. Use comments to show where unchanged content has been skipped. Wrap the markdown block with <smtcmp_block> tags. Add filename and language attributes to the <smtcmp_block> tags. For example:
-<smtcmp_block filename="path/to/file.md" language="markdown">
-<!-- ... existing content ... -->
-{{ edit_1 }}
-<!-- ... existing content ... -->
-{{ edit_2 }}
-<!-- ... existing content ... -->
-</smtcmp_block>
-The user has full access to the file, so they prefer seeing only the changes in the markdown. Often this will mean that the start/end of the file will be skipped, but that's okay! Rewrite the entire file only if specifically requested. Always provide a brief explanation of the updates, except when the user specifically asks for just the content.
-`
-    : ''
-}`
+    const skillsAppendedPrompt = this.appendSkillsToPrompt(systemPrompt)
+    const finalPrompt = this.appendTimestampToPrompt(skillsAppendedPrompt)
 
     return {
       role: 'system',
-      content: this.appendSkillsToPrompt(systemPrompt),
+      content: finalPrompt,
     }
+  }
+
+  private appendTimestampToPrompt(basePrompt: string): string {
+    if (!this.settings.injectTimestamp) {
+      return basePrompt
+    }
+    const now = new Date()
+    const timestamp = now.toISOString()
+    const day = now.toLocaleDateString('en-US', { weekday: 'long' })
+    return `${basePrompt}
+
+Current time: ${timestamp}
+Current day: ${day}`
   }
 
   private appendSkillsToPrompt(basePrompt: string): string {
@@ -394,20 +386,6 @@ The user has full access to the file, so they prefer seeing only the changes in 
 ${skillsSection}
 
 Use the \`read_skill\` tool with a skill's name to load its full instructions when you need them.`
-  }
-
-  private async getCustomInstructionMessage(): Promise<RequestMessage | null> {
-    const customInstruction = this.settings.systemPrompt.trim()
-    if (!customInstruction) {
-      return null
-    }
-    return {
-      role: 'user',
-      content: `Here are additional instructions to follow in your responses when relevant. There's no need to explicitly acknowledge them:
-<custom_instructions>
-${customInstruction}
-</custom_instructions>`,
-    }
   }
 
   private async getCurrentFileMessage(
@@ -452,12 +430,5 @@ ${transcript.map((t) => `${t.offset}: ${t.text}`).join('\n')}`
 
     const response = await requestUrl({ url })
     return htmlToMarkdown(response.text)
-  }
-
-  private getModelPromptLevel(): PromptLevel {
-    const chatModel = this.settings.chatModels.find(
-      (model) => model.id === this.settings.chatModelId,
-    )
-    return chatModel?.promptLevel ?? PromptLevel.Default
   }
 }

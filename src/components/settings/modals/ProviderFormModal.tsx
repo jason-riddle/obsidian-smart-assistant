@@ -59,6 +59,7 @@ function ProviderFormComponent({
         },
   )
   const [isTesting, setIsTesting] = useState(false)
+  const [testModel, setTestModel] = useState('')
 
   const handleTestConnection = async () => {
     const validationResult = llmProviderSchema.safeParse(formData)
@@ -73,16 +74,19 @@ function ProviderFormComponent({
     }
     setIsTesting(true)
     try {
-      const modelsResponse = await requestUrl({
-        url: `${baseUrl}/models`,
-        method: 'GET',
-        headers: formData.apiKey
-          ? { Authorization: `Bearer ${formData.apiKey}` }
-          : undefined,
-      })
-      const model = modelsResponse.json?.data?.[0]?.id
+      let model = testModel.trim()
       if (!model) {
-        throw new Error('The provider returned no models to test.')
+        const modelsResponse = await requestUrl({
+          url: `${baseUrl}/models`,
+          method: 'GET',
+          headers: formData.apiKey
+            ? { Authorization: `Bearer ${formData.apiKey}` }
+            : undefined,
+        })
+        model = modelsResponse.json?.data?.[0]?.id
+        if (!model) {
+          throw new Error('The provider returned no models to test.')
+        }
       }
       const response = await requestUrl({
         url: `${baseUrl}/chat/completions`,
@@ -230,15 +234,26 @@ function ProviderFormComponent({
 
         <ObsidianSetting
           name="Base URL"
-          desc="(leave blank if using default)"
+          desc="The base URL of the API endpoint, including the API version path (e.g. https://api.example.com/v1). Used as-is — no /v1 is appended. Leave blank if using the provider's default."
           required={providerTypeInfo.requireBaseUrl}
         >
           <ObsidianTextInput
             value={formData.baseUrl ?? ''}
-            placeholder="Enter base URL"
+            placeholder="https://api.example.com/v1"
             onChange={(value: string) =>
               setFormData((prev) => ({ ...prev, baseUrl: value }))
             }
+          />
+        </ObsidianSetting>
+
+        <ObsidianSetting
+          name="Test model"
+          desc="Model to use for the connection test. Leave blank to auto-detect the first available model."
+        >
+          <ObsidianTextInput
+            value={testModel}
+            placeholder="e.g. gpt-4o-mini (leave blank to auto-detect)"
+            onChange={(value: string) => setTestModel(value)}
           />
         </ObsidianSetting>
       </>

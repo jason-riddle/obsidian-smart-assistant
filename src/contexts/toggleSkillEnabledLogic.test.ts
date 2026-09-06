@@ -4,13 +4,16 @@ import { toggleSkillEnabledLogic } from './toggleSkillEnabledLogic'
 
 function makeSettings(disabledSkills: string[] = []): SmartAssistantSettings {
   return {
-    version: 20,
+    version: 21,
     providers: [],
     chatModels: [],
     chatModelId: 'gpt-5.6-sol',
     applyModelId: 'gpt-5.6-luna',
     systemPromptFile: '',
     systemPrompt: '',
+    systemPromptMode: 'default' as const,
+    showHiddenFeatures: false,
+    injectTimestamp: false,
     disabledSkills,
     mcp: { servers: [] },
     chatOptions: {

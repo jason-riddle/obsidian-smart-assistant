@@ -4,6 +4,10 @@ import { LLMProvider, LLMProviderType } from './types/provider.types'
 export const CHAT_VIEW_TYPE = 'smtcmp-chat-view'
 export const APPLY_VIEW_TYPE = 'smtcmp-apply-view'
 
+export const DEFAULT_SYSTEM_PROMPT = `You are an intelligent assistant helping the user work with Obsidian and answer questions. The user context is the current conversation, explicitly mentioned files, folders, blocks, images, and URLs, plus any current file content provided to you. Use available search and file tools when they can provide relevant context. Be concise, accurate, and format responses in Markdown. When editing files, show only the necessary changes in the expected file format.`
+
+export const MINIMAL_SYSTEM_PROMPT = `You are an intelligent assistant helping the user work with Obsidian. The user context is the current conversation and any explicitly provided files, folders, blocks, images, URLs, or current file content. Tools can search, read, and modify information when the user permits them; use their results as context and do not claim actions you did not perform.`
+
 // Default model ids
 export const DEFAULT_CHAT_MODEL_ID = 'gpt-5.6-sol'
 export const DEFAULT_APPLY_MODEL_ID = 'gpt-5.6-luna'

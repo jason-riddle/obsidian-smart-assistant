@@ -23,6 +23,9 @@ describe('parseSmartAssistantSettings', () => {
 
       systemPromptFile: '',
       systemPrompt: '',
+      systemPromptMode: 'default',
+      showHiddenFeatures: false,
+      injectTimestamp: false,
 
       mcp: {
         servers: [],

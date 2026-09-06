@@ -1,4 +1,4 @@
-import { App, Notice } from 'obsidian'
+import { App, Notice, requestUrl } from 'obsidian'
 import { useCallback, useEffect, useState } from 'react'
 import TextareaAutosize from 'react-textarea-autosize'
 import * as z from 'zod'
@@ -203,6 +203,7 @@ function McpServerFormComponent({
   )
 
   const [validationError, setValidationError] = useState<string | null>(null)
+  const [isTesting, setIsTesting] = useState(false)
 
   const buildParameters = useCallback((): unknown => {
     if (transportType === 'stdio') {
@@ -380,6 +381,53 @@ function McpServerFormComponent({
     const serverName = await saveServer()
     if (serverName !== null) {
       onClose()
+    }
+  }
+
+  const handleTestConnection = async () => {
+    setIsTesting(true)
+    try {
+      const built = buildParameters()
+      mcpServerParametersSchema.parse(built)
+      if (transportType === 'stdio') {
+        new Notice(
+          'stdio transport can only be tested after saving. The command will be validated on connection.',
+        )
+      } else {
+        const parsedHeaders = parseJsonOrUndefined(headers) ?? {}
+        const requestHeaders: Record<string, string> = {}
+        for (const [key, value] of Object.entries(parsedHeaders)) {
+          requestHeaders[key] = value
+        }
+        if (authType === 'bearer' && bearerToken.trim().length > 0) {
+          requestHeaders.Authorization = `Bearer ${bearerToken.trim()}`
+        }
+        const response = await requestUrl({
+          url: url.trim(),
+          method: 'GET',
+          headers: requestHeaders,
+          throw: false,
+        })
+        new Notice(
+          `Server responded with status ${response.status}. Connection test successful.`,
+        )
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        new Notice(
+          error.errors
+            .map((err) => `${err.path.join('.')}: ${err.message}`)
+            .join('\n'),
+        )
+      } else if (error instanceof SyntaxError) {
+        new Notice('Env or headers must be valid JSON')
+      } else {
+        new Notice(
+          `Connection test failed: ${error instanceof Error ? error.message : String(error)}`,
+        )
+      }
+    } finally {
+      setIsTesting(false)
     }
   }
 
@@ -588,10 +636,19 @@ function McpServerFormComponent({
             <>
               <ObsidianSetting
                 name="OAuth callback URL"
-                desc="Register this exact callback URL with the MCP server's OAuth client configuration."
+                desc="Register this callback URL with the MCP server's OAuth client configuration (recommended for Obsidian)."
               >
                 <ObsidianTextInput
                   value="obsidian://smart-assistant/oauth/callback"
+                  onChange={() => undefined}
+                />
+              </ObsidianSetting>
+              <ObsidianSetting
+                name="OAuth callback URL (localhost)"
+                desc="Alternative localhost callback for MCP servers that only support loopback redirects."
+              >
+                <ObsidianTextInput
+                  value="http://127.0.0.1:8765/smart-assistant/oauth/callback"
                   onChange={() => undefined}
                 />
               </ObsidianSetting>
@@ -617,6 +674,11 @@ function McpServerFormComponent({
       )}
 
       <ObsidianSetting>
+        <ObsidianButton
+          text={isTesting ? 'Testing...' : 'Test connection'}
+          onClick={handleTestConnection}
+          disabled={isTesting}
+        />
         <ObsidianButton text="Save" onClick={handleSubmit} cta />
         <ObsidianButton text="Cancel" onClick={onClose} />
       </ObsidianSetting>

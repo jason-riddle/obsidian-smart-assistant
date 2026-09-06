@@ -1,4 +1,4 @@
-import { App, Notice } from 'obsidian'
+import { App, Notice, requestUrl } from 'obsidian'
 import { useState } from 'react'
 
 import { DEFAULT_PROVIDERS } from '../../../constants'
@@ -40,6 +40,51 @@ function AddChatModelModalComponent({
     model: '',
     promptLevel: PromptLevel.Default,
   })
+  const [isTesting, setIsTesting] = useState(false)
+
+  const handleTestModel = async () => {
+    const provider = plugin.settings.providers.find(
+      (p) => p.id === formData.providerId,
+    )
+    if (!provider) {
+      new Notice('Provider not found.')
+      return
+    }
+    const baseUrl = provider.baseUrl?.replace(/\/+$/, '')
+    if (!baseUrl) {
+      new Notice('This provider has no base URL configured.')
+      return
+    }
+    setIsTesting(true)
+    try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      }
+      if (provider.apiKey) {
+        headers.Authorization = `Bearer ${provider.apiKey}`
+      }
+      const response = await requestUrl({
+        url: `${baseUrl}/chat/completions`,
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          model: formData.model,
+          messages: [{ role: 'user', content: 'Say hi' }],
+          max_tokens: 16,
+        }),
+      })
+      const content = response.json?.choices?.[0]?.message?.content
+      new Notice(
+        typeof content === 'string' ? content : 'Model responded successfully.',
+      )
+    } catch (error) {
+      new Notice(
+        error instanceof Error ? error.message : 'Failed to test model.',
+      )
+    } finally {
+      setIsTesting(false)
+    }
+  }
 
   const handleSubmit = async () => {
     if (plugin.settings.chatModels.some((p) => p.id === formData.id)) {
@@ -147,6 +192,11 @@ function AddChatModelModalComponent({
       </ObsidianSetting>
 
       <ObsidianSetting>
+        <ObsidianButton
+          text={isTesting ? 'Testing...' : 'Test model'}
+          onClick={handleTestModel}
+          disabled={isTesting}
+        />
         <ObsidianButton text="Add" onClick={handleSubmit} cta />
         <ObsidianButton text="Cancel" onClick={onClose} />
       </ObsidianSetting>

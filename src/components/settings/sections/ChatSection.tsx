@@ -1,4 +1,6 @@
 import {
+  DEFAULT_SYSTEM_PROMPT,
+  MINIMAL_SYSTEM_PROMPT,
   RECOMMENDED_MODELS_FOR_APPLY,
   RECOMMENDED_MODELS_FOR_CHAT,
 } from '../../../constants'
@@ -15,6 +17,38 @@ export function ChatSection() {
   return (
     <div className="smtcmp-settings-section">
       <div className="smtcmp-settings-header">Chat</div>
+
+      <ObsidianSetting
+        name="Show hidden features"
+        desc="Reveal experimental settings that are currently disabled or in development."
+      >
+        <ObsidianToggle
+          value={settings.showHiddenFeatures}
+          onChange={async (value) => {
+            await setSettings({
+              ...settings,
+              showHiddenFeatures: value,
+            })
+          }}
+        />
+      </ObsidianSetting>
+
+      {settings.showHiddenFeatures && (
+        <ObsidianSetting
+          name="Inject timestamp and day into system prompt"
+          desc="When enabled, the current ISO8601 timestamp and day of week are injected into the system prompt. This is currently disabled for debugging."
+        >
+          <ObsidianToggle
+            value={settings.injectTimestamp}
+            onChange={async (value) => {
+              await setSettings({
+                ...settings,
+                injectTimestamp: value,
+              })
+            }}
+          />
+        </ObsidianSetting>
+      )}
 
       <ObsidianSetting
         name="Chat model"
@@ -64,20 +98,66 @@ export function ChatSection() {
 
       <ObsidianSetting
         name="System prompt"
-        desc="This prompt will be added to the beginning of every chat."
-        className="smtcmp-settings-textarea-header"
-      />
-      <ObsidianSetting className="smtcmp-settings-textarea">
-        <ObsidianTextArea
-          value={settings.systemPrompt}
-          onChange={async (value: string) => {
+        desc="Choose the instructions used at the beginning of every chat."
+      >
+        <ObsidianDropdown
+          value={settings.systemPromptMode}
+          options={{
+            default: 'Default',
+            minimal: 'Minimal',
+            custom: 'Custom',
+          }}
+          onChange={async (value) => {
             await setSettings({
               ...settings,
-              systemPrompt: value,
+              systemPromptMode: value as typeof settings.systemPromptMode,
             })
           }}
         />
       </ObsidianSetting>
+
+      {(settings.systemPromptMode === 'default' ||
+        settings.systemPromptMode === 'minimal') && (
+        <ObsidianSetting
+          name="Built-in prompt preview"
+          desc="This is the built-in system prompt. It cannot be edited. Select 'Custom' to write your own."
+          className="smtcmp-settings-textarea-header"
+        />
+      )}
+      {(settings.systemPromptMode === 'default' ||
+        settings.systemPromptMode === 'minimal') && (
+        <ObsidianSetting className="smtcmp-settings-textarea">
+          <ObsidianTextArea
+            value={
+              settings.systemPromptMode === 'default'
+                ? DEFAULT_SYSTEM_PROMPT
+                : MINIMAL_SYSTEM_PROMPT
+            }
+            onChange={() => undefined}
+          />
+        </ObsidianSetting>
+      )}
+
+      {settings.systemPromptMode === 'custom' && (
+        <ObsidianSetting
+          name="Custom system prompt"
+          desc="This prompt replaces the built-in system prompt."
+          className="smtcmp-settings-textarea-header"
+        />
+      )}
+      {settings.systemPromptMode === 'custom' && (
+        <ObsidianSetting className="smtcmp-settings-textarea">
+          <ObsidianTextArea
+            value={settings.systemPrompt}
+            onChange={async (value: string) => {
+              await setSettings({
+                ...settings,
+                systemPrompt: value,
+              })
+            }}
+          />
+        </ObsidianSetting>
+      )}
 
       <ObsidianSetting
         name="Include current file"

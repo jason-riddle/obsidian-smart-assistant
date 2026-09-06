@@ -41,9 +41,14 @@ export const smartAssistantSettingsSchema = z.object({
   // compatibility with settings created before the manual prompt was restored.
   systemPrompt: z.string().catch(''),
   systemPromptFile: z.string().catch(''),
+  systemPromptMode: z.enum(['default', 'minimal', 'custom']).catch('default'),
 
   // Skills that have been disabled by the user (array of skill names)
   disabledSkills: z.array(z.string()).catch([]),
+
+  showHiddenFeatures: z.boolean().catch(false),
+
+  injectTimestamp: z.boolean().catch(false),
 
   // MCP configuration
   mcp: z
