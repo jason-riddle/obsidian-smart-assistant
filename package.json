@@ -1,7 +1,7 @@
 {
-  "name": "obsidian-smart-composer",
+  "name": "obsidian-smart-assistant",
   "version": "1.2.9",
-  "description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+  "description": "Smart Assistant for Obsidian",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",
@@ -14,7 +14,7 @@
     "migrate:compile": "node compile-migration.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "Jason Riddle",
   "license": "MIT",
   "devDependencies": {
     "@types/jest": "^29.5.13",

@@ -1,11 +1,11 @@
 {
-  "id": "smart-composer",
-  "name": "Smart Composer",
+  "id": "smart-assistant",
+  "name": "Smart Assistant",
   "version": "1.2.9",
   "minAppVersion": "0.15.0",
-  "description": "AI chat with note context, smart writing assistance, and one-click edits for your vault.",
-  "author": "Heesu Suh",
-  "authorUrl": "https://github.com/glowingjade",
+  "description": "AI chat with note context, smart writing assistance, and one-click edits for your vault. (Forked by Jason Riddle)",
+  "author": "Jason Riddle",
+  "authorUrl": "https://github.com/jason-riddle",
   "fundingUrl": "https://buymeacoffee.com/kevin.on",
   "isDesktopOnly": false
 }
