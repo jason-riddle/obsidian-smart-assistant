@@ -406,3 +406,35 @@ logger.getLevel();        // -> "warn"
 - Don't over-log: focus on lifecycle events, errors, and key decision
   points. Debug level is for verbose detail.
 
+## Releases
+
+### Creating a GitHub release
+
+Brat (and the Obsidian community plugin updater) require release
+assets to be attached to the GitHub release, not just a tag. A
+release with only a tag and release notes will fail with "missing
+manifest json file" in Brat.
+
+After `npm run build` (which produces `main.js`), attach these three
+files to the release:
+
+```bash
+gh release upload v2.1.0 main.js manifest.json styles.css --clobber
+```
+
+The required assets are:
+- `main.js` — the bundled plugin code (esbuild output)
+- `manifest.json` — plugin metadata (id, name, version, minAppVersion)
+- `styles.css` — plugin styles
+
+### Release checklist
+
+1. Verify `manifest.json` and `package.json` versions match
+2. Run `npm run build` — must pass (produces `main.js`)
+3. `git tag -a vX.Y.Z -m "vX.Y.Z — summary"`
+4. `git push origin vX.Y.Z`
+5. `gh release create vX.Y.Z --title "vX.Y.Z" --notes "..."`
+6. `gh release upload vX.Y.Z main.js manifest.json styles.css --clobber`
+7. Verify: `gh release view vX.Y.Z --json assets --jq '.assets[].name'`
+   should list all three files
+
