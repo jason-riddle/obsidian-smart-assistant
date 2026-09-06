@@ -40,6 +40,9 @@ export const smartComposerSettingsSchema = z.object({
   // System Prompt File (vault file path whose contents are used as the custom system prompt)
   systemPromptFile: z.string().catch(''),
 
+  // Skills that have been disabled by the user (array of skill names)
+  disabledSkills: z.array(z.string()).catch([]),
+
   // MCP configuration
   mcp: z
     .object({

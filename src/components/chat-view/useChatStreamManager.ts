@@ -13,6 +13,7 @@ import {
   LLMModelNotFoundException,
 } from '../../core/llm/exception'
 import { getChatModelClient } from '../../core/llm/manager'
+import { filterEnabledSkills } from '../../core/skills/skillFilter'
 import { ChatMessage } from '../../types/chat'
 import { PromptGenerator } from '../../utils/chat/promptGenerator'
 import { ResponseGenerator } from '../../utils/chat/responseGenerator'
@@ -42,7 +43,12 @@ export function useChatStreamManager({
   const app = useApp()
   const { settings, setSettings } = useSettings()
   const { getMcpManager } = useMcp()
-  const { skills } = useSkills()
+  const { skills, disabledSkills } = useSkills()
+
+  const enabledSkills = useMemo(
+    () => filterEnabledSkills(skills, disabledSkills),
+    [skills, disabledSkills],
+  )
 
   const activeStreamAbortControllersRef = useRef<AbortController[]>([])
 
@@ -118,7 +124,7 @@ export function useChatStreamManager({
           maxAutoIterations: settings.chatOptions.maxAutoIterations,
           promptGenerator,
           mcpManager,
-          skills,
+          skills: enabledSkills,
           abortSignal: abortController.signal,
         })
 

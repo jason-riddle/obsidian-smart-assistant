@@ -7,12 +7,12 @@ import { ObsidianButton } from '../../common/ObsidianButton'
 import { ObsidianSetting } from '../../common/ObsidianSetting'
 import { ConfirmModal } from '../../modals/ConfirmModal'
 
-type EtcSectionProps = {
+type MiscSectionProps = {
   app: App
   plugin: SmartComposerPlugin
 }
 
-export function EtcSection({ app }: EtcSectionProps) {
+export function MiscSection({ app }: MiscSectionProps) {
   const { setSettings } = useSettings()
 
   const handleResetSettings = () => {
@@ -31,7 +31,7 @@ export function EtcSection({ app }: EtcSectionProps) {
 
   return (
     <div className="smtcmp-settings-section">
-      <div className="smtcmp-settings-header">Etc</div>
+      <div className="smtcmp-settings-header">Miscellaneous</div>
 
       <ObsidianSetting
         name="Reset settings"

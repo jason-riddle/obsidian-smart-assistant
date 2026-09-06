@@ -10,19 +10,25 @@ import {
 
 import { SkillManager } from '../core/skills/skillManager'
 import { Skill } from '../core/skills/types'
+import { SmartComposerSettings } from '../settings/schema/setting.types'
 
 import { useApp } from './app-context'
+import { useSettings } from './settings-context'
 
 export type SkillsContextType = {
   skills: Skill[]
+  disabledSkills: string[]
   refreshSkills: () => Promise<void>
   getSkillManager: () => SkillManager
+  toggleSkillEnabled: (skillName: string) => Promise<void>
+  isSkillEnabled: (skillName: string) => boolean
 }
 
 const SkillsContext = createContext<SkillsContextType | null>(null)
 
 export function SkillsProvider({ children }: PropsWithChildren) {
   const app = useApp()
+  const { settings, setSettings } = useSettings()
   const [skills, setSkills] = useState<Skill[]>([])
 
   const skillManager = useMemo(() => new SkillManager(app), [app])
@@ -44,9 +50,44 @@ export function SkillsProvider({ children }: PropsWithChildren) {
 
   const getSkillManager = useCallback(() => skillManager, [skillManager])
 
+  const toggleSkillEnabled = useCallback(
+    async (skillName: string) => {
+      const current = settings.disabledSkills
+      const isDisabled = current.includes(skillName)
+      const newDisabledSkills = isDisabled
+        ? current.filter((name) => name !== skillName)
+        : [...current, skillName]
+      const newSettings: SmartComposerSettings = {
+        ...settings,
+        disabledSkills: newDisabledSkills,
+      }
+      await setSettings(newSettings)
+    },
+    [settings, setSettings],
+  )
+
+  const isSkillEnabled = useCallback(
+    (skillName: string) => !settings.disabledSkills.includes(skillName),
+    [settings.disabledSkills],
+  )
+
   const value = useMemo(
-    () => ({ skills, refreshSkills, getSkillManager }),
-    [skills, refreshSkills, getSkillManager],
+    () => ({
+      skills,
+      disabledSkills: settings.disabledSkills,
+      refreshSkills,
+      getSkillManager,
+      toggleSkillEnabled,
+      isSkillEnabled,
+    }),
+    [
+      skills,
+      settings.disabledSkills,
+      refreshSkills,
+      getSkillManager,
+      toggleSkillEnabled,
+      isSkillEnabled,
+    ],
   )
 
   return (

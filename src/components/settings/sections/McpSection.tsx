@@ -16,7 +16,6 @@ import { useSettings } from '../../../contexts/settings-context'
 import { McpManager } from '../../../core/mcp/mcpManager'
 import SmartComposerPlugin from '../../../main'
 import {
-  McpServerParameters,
   McpServerState,
   McpServerStatus,
   McpTool,
@@ -32,13 +31,6 @@ import {
 type McpSectionProps = {
   app: App
   plugin: SmartComposerPlugin
-}
-
-function getTransportSummary(parameters: McpServerParameters): string {
-  if (parameters.type === 'stdio') {
-    return `stdio: ${parameters.command}`
-  }
-  return `${parameters.type}: ${parameters.url}`
 }
 
 function getAuthSummary(server: McpServerState): string | null {
@@ -131,6 +123,7 @@ export function McpSection({ app, plugin }: McpSectionProps) {
           <div className="smtcmp-mcp-servers-container">
             <div className="smtcmp-mcp-servers-header">
               <div>Server</div>
+              <div>Transport</div>
               <div>Status</div>
               <div>Enabled</div>
               <div>Actions</div>
@@ -210,14 +203,14 @@ function McpServerComponent({
       <div className="smtcmp-mcp-server-row">
         <div className="smtcmp-mcp-server-name">
           <span>{server.name}</span>
-          <span className="smtcmp-mcp-server-transport">
-            {getTransportSummary(server.config.parameters)}
-          </span>
           {getAuthSummary(server) && (
             <span className="smtcmp-mcp-server-transport">
               {getAuthSummary(server)}
             </span>
           )}
+        </div>
+        <div className="smtcmp-mcp-server-transport">
+          {server.config.parameters.type}
         </div>
         <div className="smtcmp-mcp-server-status">
           <McpServerStatusBadge status={server.status} />

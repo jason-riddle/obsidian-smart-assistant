@@ -27,6 +27,10 @@ const baseChatModelSchema = z.object({
 
 export const chatModelSchema = z.discriminatedUnion('providerType', [
   z.object({
+    providerType: z.literal('aperture'),
+    ...baseChatModelSchema.shape,
+  }),
+  z.object({
     providerType: z.literal('anthropic'),
     ...baseChatModelSchema.shape,
     thinking: z
@@ -94,6 +98,10 @@ export const chatModelSchema = z.discriminatedUnion('providerType', [
   }),
   z.object({
     providerType: z.literal('lm-studio'),
+    ...baseChatModelSchema.shape,
+  }),
+  z.object({
+    providerType: z.literal('unsloth'),
     ...baseChatModelSchema.shape,
   }),
   z.object({

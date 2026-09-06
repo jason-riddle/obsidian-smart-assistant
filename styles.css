@@ -1703,7 +1703,7 @@ button.smtcmp-chat-input-model-select {
 
 .smtcmp-mcp-servers-header {
   display: grid;
-  grid-template-columns: 1fr 128px 64px 112px; /* Match columns with .smtcmp-mcp-server-row to ensure proper alignment */
+  grid-template-columns: 1fr 80px 128px 64px 112px; /* Match columns with .smtcmp-mcp-server-row to ensure proper alignment */
   gap: var(--size-4-4);
   align-items: center;
   min-height: var(--size-4-10);
@@ -1721,9 +1721,12 @@ button.smtcmp-chat-input-model-select {
     text-align: left;
   }
   & > div:nth-child(3) {
-    text-align: center;
+    text-align: left;
   }
   & > div:nth-child(4) {
+    text-align: center;
+  }
+  & > div:nth-child(5) {
     text-align: center;
   }
 }
@@ -1742,7 +1745,7 @@ button.smtcmp-chat-input-model-select {
 
 .smtcmp-mcp-server-row {
   display: grid;
-  grid-template-columns: 1fr 128px 64px 112px; /* Match columns with .smtcmp-mcp-servers-header to ensure proper alignment */
+  grid-template-columns: 1fr 80px 128px 64px 112px; /* Match columns with .smtcmp-mcp-servers-header to ensure proper alignment */
   gap: var(--size-4-4);
   align-items: center;
   min-height: var(--size-4-10);
@@ -2024,6 +2027,58 @@ button.smtcmp-chat-input-model-select {
   padding: var(--size-4-1) 0;
 }
 
+.smtcmp-skill-item {
+  &.smtcmp-skill-item .setting-item-control {
+    flex-shrink: 0;
+  }
+}
+
+.smtcmp-skill-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-1);
+  min-width: 0;
+  flex: 1;
+}
+
+.smtcmp-skill-item-name {
+  font-weight: var(--font-medium);
+}
+
+.smtcmp-skill-item-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--size-4-2);
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}
+
+.smtcmp-skill-source-badge {
+  display: inline-block;
+  padding: 2px var(--size-4-2);
+  border-radius: var(--radius-s);
+  font-size: var(--font-ui-smaller);
+  font-weight: var(--font-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  &.smtcmp-skill-source-vault {
+    background-color: var(--background-modifier-success);
+    color: var(--text-success);
+  }
+
+  &.smtcmp-skill-source-bundled {
+    background-color: var(--background-modifier-info);
+    color: var(--text-normal);
+  }
+}
+
+.smtcmp-skill-path {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .smtcmp-continue-response-button {
   display: flex;
   align-items: center;
@@ -2032,4 +2087,14 @@ button.smtcmp-chat-input-model-select {
 
 .smtcmp-setting-item--nested {
   padding-left: var(--size-4-4);
+}
+
+.smtcmp-file-suggest-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.smtcmp-file-suggest-item small {
+  opacity: 0.6;
+  font-size: var(--font-ui-smaller);
 }

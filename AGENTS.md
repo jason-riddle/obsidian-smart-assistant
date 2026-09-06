@@ -18,8 +18,13 @@ npm run build        # tsc typecheck + esbuild production bundle → main.js
 npm run lint:check   # prettier --check + eslint
 npm run lint:fix     # prettier --write + eslint --fix
 npm run type:check   # tsc --noEmit
-npm run test         # jest
+npm run test         # jest — DO NOT RUN without explicit user approval
 ```
+
+> **WARNING: Running tests (`npm run test`) is BANNED unless the user
+> gives explicit approval.** Running tests causes the machine to run
+> out of memory. This must be investigated later. Do NOT run
+> `npm run test`, `jest`, or any test command without asking first.
 
 ## Architecture Overview
 
@@ -45,10 +50,21 @@ npm run test         # jest
 
 - **`src/core/llm/`** — LLM provider implementations.
   - `base.ts` — Abstract `BaseLLMProvider` class.
-  - `manager.ts` — Provider factory and registration.
+  - `manager.ts` — Provider factory (`getProviderClient`) and model
+    resolver (`getChatModelClient`). The factory switch handles 14
+    provider types: anthropic, openai, gemini, xai, deepseek, mistral,
+    perplexity, openrouter, ollama, lm-studio, azure-openai,
+    openai-compatible, aperture, unsloth.
   - Providers: OpenAI, Anthropic, Gemini, Ollama, Mistral, Perplexity,
-    xAI, DeepSeek, Azure OpenAI, LM Studio, OpenRouter.
+    xAI, DeepSeek, Azure OpenAI, LM Studio, OpenRouter,
+    OpenAI-Compatible, Aperture, Unsloth.
   - Message adapters for non-OpenAI-compatible providers.
+  - **Provider registry:** `src/constants.ts` defines `PROVIDER_TYPES_INFO`
+    (type metadata: label, defaultProviderId, requireApiKey,
+    requireBaseUrl, additionalSettings) and `DEFAULT_PROVIDERS` (the
+    shipped default provider instances). `DEFAULT_CHAT_MODELS` defines
+    the shipped default models. All three are the single source of
+    truth for provider/model defaults.
 
 ### Settings system
 
@@ -56,7 +72,7 @@ npm run test         # jest
   settings (`smartComposerSettingsSchema`).
 - **`src/settings/schema/settings.ts`** — Settings parsing and validation.
 - **`src/settings/schema/migrations/`** — Versioned migration chain.
-  - `index.ts` — Exports `SETTINGS_SCHEMA_VERSION` (currently 18) and the
+  - `index.ts` — Exports `SETTINGS_SCHEMA_VERSION` (currently 20) and the
     `SETTING_MIGRATIONS` array.
   - Each file `N_to_(N+1).ts` contains a single migration function.
 - **`src/settings/SettingTab.tsx`** — Obsidian settings UI (React).
@@ -222,7 +238,7 @@ transport:
 ## Settings System
 
 Settings are defined with Zod schemas and migrated through a versioned
-chain. The current schema version is `SETTINGS_SCHEMA_VERSION` (18).
+chain. The current schema version is `SETTINGS_SCHEMA_VERSION` (20).
 
 ### Adding a new settings migration
 
@@ -319,7 +335,13 @@ always run immediately.
 
 ## Code Conventions
 
-- Follow Google TypeScript Style Guide.
+- Follow **Google TypeScript Style Guide**.
+- Aim for **Google standard library quality level** of code.
+- Code must be **easy to read, easy to debug, and easy to follow**.
+- Prefer **simple, straightforward** implementations over clever or
+  obscure ones.
+- Code should be **well scoped**, with **low coupling** and **high
+  cohesion**.
 - Use **Zod** for all schema validation.
 - **No comments** in code unless explicitly requested.
 - Prefer editing existing files over creating new ones.
@@ -419,7 +441,7 @@ After `npm run build` (which produces `main.js`), attach these three
 files to the release:
 
 ```bash
-gh release upload v2.1.0 main.js manifest.json styles.css --clobber
+gh release upload 2.1.0 main.js manifest.json styles.css --clobber
 ```
 
 The required assets are:
@@ -431,10 +453,69 @@ The required assets are:
 
 1. Verify `manifest.json` and `package.json` versions match
 2. Run `npm run build` — must pass (produces `main.js`)
-3. `git tag -a vX.Y.Z -m "vX.Y.Z — summary"`
-4. `git push origin vX.Y.Z`
-5. `gh release create vX.Y.Z --title "vX.Y.Z" --notes "..."`
-6. `gh release upload vX.Y.Z main.js manifest.json styles.css --clobber`
-7. Verify: `gh release view vX.Y.Z --json assets --jq '.assets[].name'`
+3. `git tag -a X.Y.Z -m "X.Y.Z — summary"`
+4. `git push origin X.Y.Z`
+5. `gh release create X.Y.Z --title "X.Y.Z" --notes "..."`
+6. `gh release upload X.Y.Z main.js manifest.json styles.css --clobber`
+7. Verify: `gh release view X.Y.Z --json assets --jq '.assets[].name'`
    should list all three files
+
+> **Tag format:** Use `X.Y.Z` (e.g. `2.1.1`), NOT `vX.Y.Z` (e.g.
+> `v2.1.1`). Tags and release titles must not have a `v` prefix.
+
+> **Version bumping:** Prefer patch bumps (`X.Y.Z` → `X.Y.Z+1`) for
+> bug fixes and small changes. Use minor bumps (`X.Y.Z` → `X.Y+1.0`)
+> for new features. Avoid major bumps unless there is a breaking
+> change.
+
+> **After every `git push`:** Always create a git tag and a GitHub
+> release with the required assets uploaded. A push without a
+> corresponding release means Brat users cannot install the update.
+
+## Notes & Quirks
+
+Discovered during development. Append here as new quirks are found.
+
+- **"Etc" section renamed to "Miscellaneous"** — the settings section
+  header at the bottom of the settings tab was labeled "Etc". Renamed
+  to "Miscellaneous" (file renamed `EtcSection.tsx` →
+  `MiscSection.tsx`, component renamed `EtcSection` → `MiscSection`).
+- **Custom model editing exists via `EditChatModelModal`** — a pencil
+  icon on each model row opens `src/components/settings/modals/EditChatModelModal.tsx`,
+  which edits `id`, `providerId`, `model`, and `promptLevel`. If the
+  edited model is the selected chat/apply model, the selection follows
+  the new id. The gear icon (`ChatModelSettingsModal`) still only
+  exposes provider-specific options (reasoning, thinking, web_search).
+- **System prompt file input has autocomplete** — the
+  `systemPromptFile` setting uses a `FileSuggestInput` component
+  (`src/components/common/FileSuggest.tsx`) that wraps
+  Obsidian's `AbstractInputSuggest<TFile>` to show a fuzzy-filtered
+  dropdown of markdown files in the vault as the user types.
+- **Skills support enable/disable** — a `disabledSkills` string array
+  in settings (schema v20) persists disabled skill names. The
+  `SkillsProvider` exposes `toggleSkillEnabled`/`isSkillEnabled`;
+  `Chat.tsx` and `useChatStreamManager.ts` filter disabled skills out
+  of both the system prompt and the `read_skill` tool.
+- **Default providers trimmed to lm-studio, ollama, openai, openrouter,
+  unsloth** — `aperture` and `openai-compatible` remain selectable
+  types but have `defaultProviderId: null` (they require a base URL,
+  so no default instance is shipped). Migration 18→19 removes unused
+  default providers (kept if the user set an API key) and their models.
+- **Default models are OpenAI-only GPT-5.6/GPT-6 family** —
+  `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`, `gpt-6-astra`.
+  Default chat model `gpt-5.6-sol`, default apply model `gpt-5.6-luna`.
+  Pricing lives in `OPENAI_PRICES` (only OpenAI prices remain —
+  other provider price tables were removed).
+- **New providers: aperture and unsloth** — `aperture`
+  (Tailscale AI gateway; OpenAI-compatible, requires base URL, no API
+  key — Tailscale identity handles auth; routes by model name) and
+  `unsloth` (local LLM server; OpenAI-compatible, requires API key
+  `sk-unsloth-…`, default base URL `http://127.0.0.1:8000`). Both
+  live in `src/core/llm/apertureProvider.ts` and
+  `src/core/llm/unslothProvider.ts`.
+- **OpenAI GPT-5.6 family** — launched July 9, 2026. Three tiers:
+  Sol ($5/$30), Terra ($2.50/$15), Luna ($1/$6). API model IDs:
+  `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`.
+- **OpenAI GPT-6 Astra** — launched September 3, 2026. API model ID:
+  `gpt-6-astra`. Pricing $10/$50 per 1M tokens.
 

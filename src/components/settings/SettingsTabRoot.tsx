@@ -5,8 +5,8 @@ import { SkillsProvider } from '../../contexts/skills-context'
 import SmartComposerPlugin from '../../main'
 
 import { ChatSection } from './sections/ChatSection'
-import { EtcSection } from './sections/EtcSection'
 import { McpSection } from './sections/McpSection'
+import { MiscSection } from './sections/MiscSection'
 import { ModelsSection } from './sections/ModelsSection'
 import { ProvidersSection } from './sections/ProvidersSection'
 import { SkillsSection } from './sections/SkillsSection'
@@ -19,7 +19,7 @@ type SettingsTabRootProps = {
 export function SettingsTabRoot({ app, plugin }: SettingsTabRootProps) {
   return (
     <>
-      <ChatSection />
+      <ChatSection app={app} />
       <ProvidersSection app={app} plugin={plugin} />
       <ModelsSection app={app} plugin={plugin} />
       <McpSection app={app} plugin={plugin} />
@@ -28,7 +28,7 @@ export function SettingsTabRoot({ app, plugin }: SettingsTabRootProps) {
           <SkillsSection app={app} />
         </SkillsProvider>
       </AppProvider>
-      <EtcSection app={app} plugin={plugin} />
+      <MiscSection app={app} plugin={plugin} />
     </>
   )
 }

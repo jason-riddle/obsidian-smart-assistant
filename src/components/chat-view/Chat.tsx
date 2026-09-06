@@ -16,6 +16,7 @@ import { ApplyViewState } from '../../ApplyView'
 import { APPLY_VIEW_TYPE } from '../../constants'
 import { useApp } from '../../contexts/app-context'
 import { useMcp } from '../../contexts/mcp-context'
+import { usePlugin } from '../../contexts/plugin-context'
 import { useSettings } from '../../contexts/settings-context'
 import { useSkills } from '../../contexts/skills-context'
 import {
@@ -24,6 +25,7 @@ import {
   LLMBaseUrlNotSetException,
 } from '../../core/llm/exception'
 import { getChatModelClient } from '../../core/llm/manager'
+import { filterEnabledSkills } from '../../core/skills/skillFilter'
 import { useChatHistory } from '../../hooks/useChatHistory'
 import {
   AssistantToolMessageGroup,
@@ -85,9 +87,15 @@ export type ChatProps = {
 
 const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
   const app = useApp()
+  const plugin = usePlugin()
   const { settings } = useSettings()
   const { getMcpManager } = useMcp()
-  const { skills } = useSkills()
+  const { skills, disabledSkills } = useSkills()
+
+  const enabledSkills = useMemo(
+    () => filterEnabledSkills(skills, disabledSkills),
+    [skills, disabledSkills],
+  )
 
   const {
     createOrUpdateConversation,
@@ -97,8 +105,8 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
     chatList,
   } = useChatHistory()
   const promptGenerator = useMemo(() => {
-    return new PromptGenerator(app, settings, skills)
-  }, [app, settings, skills])
+    return new PromptGenerator(app, settings, enabledSkills)
+  }, [app, settings, enabledSkills])
 
   const [inputMessage, setInputMessage] = useState<ChatUserMessage>(() => {
     const newMessage = getNewInputMessage(app)
@@ -585,7 +593,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
           </ChatListDropdown>
           <button
             onClick={() => {
-              new SkillsSectionModal(app).open()
+              new SkillsSectionModal(app, plugin).open()
             }}
             className="clickable-icon"
             aria-label="Skills"

@@ -5,16 +5,21 @@ export const CHAT_VIEW_TYPE = 'smtcmp-chat-view'
 export const APPLY_VIEW_TYPE = 'smtcmp-apply-view'
 
 // Default model ids
-export const DEFAULT_CHAT_MODEL_ID = 'claude-sonnet-4.5'
-// gpt-4.1-mini is preferred over gpt-5-mini because gpt-5 models do not support
-// predicted outputs, making them significantly slower for apply tasks.
-export const DEFAULT_APPLY_MODEL_ID = 'gpt-4.1-mini'
+export const DEFAULT_CHAT_MODEL_ID = 'gpt-5.6-sol'
+export const DEFAULT_APPLY_MODEL_ID = 'gpt-5.6-luna'
 
 // Recommended model ids
-export const RECOMMENDED_MODELS_FOR_CHAT = ['claude-sonnet-4.5', 'gpt-5.2']
-export const RECOMMENDED_MODELS_FOR_APPLY = ['gpt-4.1-mini']
+export const RECOMMENDED_MODELS_FOR_CHAT = ['gpt-5.6-sol', 'gpt-6-astra']
+export const RECOMMENDED_MODELS_FOR_APPLY = ['gpt-5.6-luna']
 
 export const PROVIDER_TYPES_INFO = {
+  aperture: {
+    label: 'Aperture',
+    defaultProviderId: null,
+    requireApiKey: false,
+    requireBaseUrl: true,
+    additionalSettings: [],
+  },
   anthropic: {
     label: 'Anthropic',
     defaultProviderId: 'anthropic',
@@ -22,72 +27,9 @@ export const PROVIDER_TYPES_INFO = {
     requireBaseUrl: false,
     additionalSettings: [],
   },
-  openai: {
-    label: 'OpenAI',
-    defaultProviderId: 'openai',
-    requireApiKey: true,
-    requireBaseUrl: false,
-    additionalSettings: [],
-  },
-  gemini: {
-    label: 'Gemini',
-    defaultProviderId: 'gemini',
-    requireApiKey: true,
-    requireBaseUrl: false,
-    additionalSettings: [],
-  },
-  xai: {
-    label: 'xAI',
-    defaultProviderId: 'xai',
-    requireApiKey: true,
-    requireBaseUrl: false,
-    additionalSettings: [],
-  },
-  deepseek: {
-    label: 'DeepSeek',
-    defaultProviderId: 'deepseek',
-    requireApiKey: true,
-    requireBaseUrl: false,
-    additionalSettings: [],
-  },
-  mistral: {
-    label: 'Mistral',
-    defaultProviderId: 'mistral',
-    requireApiKey: true,
-    requireBaseUrl: false,
-    additionalSettings: [],
-  },
-  perplexity: {
-    label: 'Perplexity',
-    defaultProviderId: 'perplexity',
-    requireApiKey: true,
-    requireBaseUrl: false,
-    additionalSettings: [],
-  },
-  openrouter: {
-    label: 'OpenRouter',
-    defaultProviderId: 'openrouter',
-    requireApiKey: true,
-    requireBaseUrl: false,
-    additionalSettings: [],
-  },
-  ollama: {
-    label: 'Ollama',
-    defaultProviderId: 'ollama',
-    requireApiKey: false,
-    requireBaseUrl: false,
-    additionalSettings: [],
-  },
-  'lm-studio': {
-    label: 'LM Studio',
-    defaultProviderId: 'lm-studio',
-    requireApiKey: false,
-    requireBaseUrl: false,
-    additionalSettings: [],
-  },
   'azure-openai': {
     label: 'Azure OpenAI',
-    defaultProviderId: null, // no default provider for this type
+    defaultProviderId: null,
     requireApiKey: true,
     requireBaseUrl: true,
     additionalSettings: [
@@ -107,9 +49,51 @@ export const PROVIDER_TYPES_INFO = {
       },
     ],
   },
+  deepseek: {
+    label: 'DeepSeek',
+    defaultProviderId: 'deepseek',
+    requireApiKey: true,
+    requireBaseUrl: false,
+    additionalSettings: [],
+  },
+  gemini: {
+    label: 'Gemini',
+    defaultProviderId: 'gemini',
+    requireApiKey: true,
+    requireBaseUrl: false,
+    additionalSettings: [],
+  },
+  'lm-studio': {
+    label: 'LM Studio',
+    defaultProviderId: 'lm-studio',
+    requireApiKey: false,
+    requireBaseUrl: false,
+    additionalSettings: [],
+  },
+  mistral: {
+    label: 'Mistral',
+    defaultProviderId: 'mistral',
+    requireApiKey: true,
+    requireBaseUrl: false,
+    additionalSettings: [],
+  },
+  ollama: {
+    label: 'Ollama',
+    defaultProviderId: 'ollama',
+    requireApiKey: false,
+    requireBaseUrl: false,
+    additionalSettings: [],
+  },
+  openai: {
+    label: 'OpenAI',
+    defaultProviderId: 'openai',
+    requireApiKey: true,
+    requireBaseUrl: false,
+    additionalSettings: [],
+  },
   'openai-compatible': {
     label: 'OpenAI Compatible',
-    defaultProviderId: null, // no default provider for this type
+    defaultProviderId: null,
     requireApiKey: false,
     requireBaseUrl: true,
     additionalSettings: [
@@ -122,6 +106,34 @@ export const PROVIDER_TYPES_INFO = {
           'Enable this if you encounter CORS errors related to Stainless headers (x-stainless-os, etc.)',
       },
     ],
+  },
+  openrouter: {
+    label: 'OpenRouter',
+    defaultProviderId: 'openrouter',
+    requireApiKey: true,
+    requireBaseUrl: false,
+    additionalSettings: [],
+  },
+  perplexity: {
+    label: 'Perplexity',
+    defaultProviderId: 'perplexity',
+    requireApiKey: true,
+    requireBaseUrl: false,
+    additionalSettings: [],
+  },
+  unsloth: {
+    label: 'Unsloth',
+    defaultProviderId: 'unsloth',
+    requireApiKey: true,
+    requireBaseUrl: false,
+    additionalSettings: [],
+  },
+  xai: {
+    label: 'xAI',
+    defaultProviderId: 'xai',
+    requireApiKey: true,
+    requireBaseUrl: false,
+    additionalSettings: [],
   },
 } as const satisfies Record<
   LLMProviderType,
@@ -148,44 +160,24 @@ export const PROVIDER_TYPES_INFO = {
  */
 export const DEFAULT_PROVIDERS: readonly LLMProvider[] = [
   {
-    type: 'anthropic',
-    id: PROVIDER_TYPES_INFO.anthropic.defaultProviderId,
-  },
-  {
-    type: 'openai',
-    id: PROVIDER_TYPES_INFO.openai.defaultProviderId,
-  },
-  {
-    type: 'gemini',
-    id: PROVIDER_TYPES_INFO.gemini.defaultProviderId,
-  },
-  {
-    type: 'xai',
-    id: PROVIDER_TYPES_INFO.xai.defaultProviderId,
-  },
-  {
-    type: 'deepseek',
-    id: PROVIDER_TYPES_INFO.deepseek.defaultProviderId,
-  },
-  {
-    type: 'mistral',
-    id: PROVIDER_TYPES_INFO.mistral.defaultProviderId,
-  },
-  {
-    type: 'perplexity',
-    id: PROVIDER_TYPES_INFO.perplexity.defaultProviderId,
-  },
-  {
-    type: 'openrouter',
-    id: PROVIDER_TYPES_INFO.openrouter.defaultProviderId,
+    type: 'lm-studio',
+    id: PROVIDER_TYPES_INFO['lm-studio'].defaultProviderId,
   },
   {
     type: 'ollama',
     id: PROVIDER_TYPES_INFO.ollama.defaultProviderId,
   },
   {
-    type: 'lm-studio',
-    id: PROVIDER_TYPES_INFO['lm-studio'].defaultProviderId,
+    type: 'openai',
+    id: PROVIDER_TYPES_INFO.openai.defaultProviderId,
+  },
+  {
+    type: 'openrouter',
+    id: PROVIDER_TYPES_INFO.openrouter.defaultProviderId,
+  },
+  {
+    type: 'unsloth',
+    id: PROVIDER_TYPES_INFO.unsloth.defaultProviderId,
   },
 ]
 
@@ -196,86 +188,36 @@ export const DEFAULT_PROVIDERS: readonly LLMProvider[] = [
  */
 export const DEFAULT_CHAT_MODELS: readonly ChatModel[] = [
   {
-    providerType: 'anthropic',
-    providerId: PROVIDER_TYPES_INFO.anthropic.defaultProviderId,
-    id: 'claude-opus-4.5',
-    model: 'claude-opus-4-5',
-  },
-  {
-    providerType: 'anthropic',
-    providerId: PROVIDER_TYPES_INFO.anthropic.defaultProviderId,
-    id: 'claude-sonnet-4.5',
-    model: 'claude-sonnet-4-5',
-  },
-  {
-    providerType: 'anthropic',
-    providerId: PROVIDER_TYPES_INFO.anthropic.defaultProviderId,
-    id: 'claude-haiku-4.5',
-    model: 'claude-haiku-4-5',
-  },
-  {
     providerType: 'openai',
     providerId: PROVIDER_TYPES_INFO.openai.defaultProviderId,
-    id: 'gpt-5.2',
-    model: 'gpt-5.2',
-  },
-  {
-    providerType: 'openai',
-    providerId: PROVIDER_TYPES_INFO.openai.defaultProviderId,
-    id: 'gpt-5-mini',
-    model: 'gpt-5-mini',
-  },
-  {
-    providerType: 'openai',
-    providerId: PROVIDER_TYPES_INFO.openai.defaultProviderId,
-    id: 'gpt-4.1-mini',
-    model: 'gpt-4.1-mini',
-  },
-  {
-    providerType: 'openai',
-    providerId: PROVIDER_TYPES_INFO.openai.defaultProviderId,
-    id: 'o4-mini',
-    model: 'o4-mini',
+    id: 'gpt-5.6-sol',
+    model: 'gpt-5.6-sol',
     reasoning: {
       enabled: true,
       reasoning_effort: 'medium',
     },
   },
   {
-    providerType: 'gemini',
-    providerId: PROVIDER_TYPES_INFO.gemini.defaultProviderId,
-    id: 'gemini-3-pro-preview',
-    model: 'gemini-3-pro-preview',
+    providerType: 'openai',
+    providerId: PROVIDER_TYPES_INFO.openai.defaultProviderId,
+    id: 'gpt-5.6-terra',
+    model: 'gpt-5.6-terra',
   },
   {
-    providerType: 'gemini',
-    providerId: PROVIDER_TYPES_INFO.gemini.defaultProviderId,
-    id: 'gemini-3-flash-preview',
-    model: 'gemini-3-flash-preview',
+    providerType: 'openai',
+    providerId: PROVIDER_TYPES_INFO.openai.defaultProviderId,
+    id: 'gpt-5.6-luna',
+    model: 'gpt-5.6-luna',
   },
   {
-    providerType: 'deepseek',
-    providerId: PROVIDER_TYPES_INFO.deepseek.defaultProviderId,
-    id: 'deepseek-chat',
-    model: 'deepseek-chat',
-  },
-  {
-    providerType: 'deepseek',
-    providerId: PROVIDER_TYPES_INFO.deepseek.defaultProviderId,
-    id: 'deepseek-reasoner',
-    model: 'deepseek-reasoner',
-  },
-  {
-    providerType: 'xai',
-    providerId: PROVIDER_TYPES_INFO.xai.defaultProviderId,
-    id: 'grok-4-1-fast',
-    model: 'grok-4-1-fast',
-  },
-  {
-    providerType: 'xai',
-    providerId: PROVIDER_TYPES_INFO.xai.defaultProviderId,
-    id: 'grok-4-1-fast-non-reasoning',
-    model: 'grok-4-1-fast-non-reasoning',
+    providerType: 'openai',
+    providerId: PROVIDER_TYPES_INFO.openai.defaultProviderId,
+    id: 'gpt-6-astra',
+    model: 'gpt-6-astra',
+    reasoning: {
+      enabled: true,
+      reasoning_effort: 'medium',
+    },
   },
 ]
 
@@ -286,6 +228,10 @@ type ModelPricing = {
 }
 
 export const OPENAI_PRICES: Record<string, ModelPricing> = {
+  'gpt-6-astra': { input: 10, output: 50 },
+  'gpt-5.6-sol': { input: 5, output: 30 },
+  'gpt-5.6-terra': { input: 2.5, output: 15 },
+  'gpt-5.6-luna': { input: 1, output: 6 },
   'gpt-5.2': { input: 1.75, output: 14 },
   'gpt-5.1': { input: 1.25, output: 10 },
   'gpt-5': { input: 1.25, output: 10 },
@@ -301,30 +247,4 @@ export const OPENAI_PRICES: Record<string, ModelPricing> = {
   'o4-mini': { input: 1.1, output: 4.4 },
   'o3-mini': { input: 1.1, output: 4.4 },
   'o1-mini': { input: 1.1, output: 4.4 },
-}
-
-export const ANTHROPIC_PRICES: Record<string, ModelPricing> = {
-  'claude-opus-4-5': { input: 5, output: 25 },
-  'claude-opus-4-1': { input: 15, output: 75 },
-  'claude-opus-4-0': { input: 15, output: 75 },
-  'claude-sonnet-4-5': { input: 3, output: 15 },
-  'claude-sonnet-4-0': { input: 3, output: 15 },
-  'claude-3-5-sonnet-latest': { input: 3, output: 15 },
-  'claude-3-7-sonnet-latest': { input: 3, output: 15 },
-  'claude-haiku-4-5': { input: 1, output: 5 },
-  'claude-3-5-haiku-latest': { input: 1, output: 5 },
-}
-
-// Gemini is currently free for low rate limits
-export const GEMINI_PRICES: Record<string, ModelPricing> = {}
-
-export const XAI_PRICES: Record<string, ModelPricing> = {
-  'grok-4-1-fast': { input: 0.2, output: 0.5 },
-  'grok-4-1-fast-non-reasoning': { input: 0.2, output: 0.5 },
-}
-
-export const DEEPSEEK_PRICES: Record<string, ModelPricing> = {
-  // Model version: DeepSeek-V3.2
-  'deepseek-chat': { input: 0.28, output: 0.42 },
-  'deepseek-reasoner': { input: 0.28, output: 0.42 },
 }

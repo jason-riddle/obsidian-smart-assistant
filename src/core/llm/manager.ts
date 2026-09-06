@@ -4,6 +4,7 @@ import { LLMProvider } from '../../types/provider.types'
 import { logger } from '../../utils/logger'
 
 import { AnthropicProvider } from './anthropic'
+import { ApertureProvider } from './apertureProvider'
 import { AzureOpenAIProvider } from './azureOpenaiProvider'
 import { BaseLLMProvider } from './base'
 import { DeepSeekStudioProvider } from './deepseekStudioProvider'
@@ -16,6 +17,7 @@ import { OpenAIAuthenticatedProvider } from './openai'
 import { OpenAICompatibleProvider } from './openaiCompatibleProvider'
 import { OpenRouterProvider } from './openRouterProvider'
 import { PerplexityProvider } from './perplexityProvider'
+import { UnslothProvider } from './unslothProvider'
 import { XaiProvider } from './xaiProvider'
 
 /*
@@ -36,6 +38,9 @@ export function getProviderClient({
   }
 
   switch (provider.type) {
+    case 'aperture': {
+      return new ApertureProvider(provider)
+    }
     case 'anthropic': {
       return new AnthropicProvider(provider)
     }
@@ -53,6 +58,9 @@ export function getProviderClient({
     }
     case 'lm-studio': {
       return new LmStudioProvider(provider)
+    }
+    case 'unsloth': {
+      return new UnslothProvider(provider)
     }
     case 'deepseek': {
       return new DeepSeekStudioProvider(provider)

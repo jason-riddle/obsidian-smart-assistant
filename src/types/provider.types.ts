@@ -15,6 +15,15 @@ export const baseLlmProviderSchema = z.object({
  */
 export const llmProviderSchema = z.discriminatedUnion('type', [
   z.object({
+    type: z.literal('aperture'),
+    ...baseLlmProviderSchema.shape,
+    baseUrl: z
+      .string({
+        required_error: 'base URL is required',
+      })
+      .min(1, 'base URL is required'),
+  }),
+  z.object({
     type: z.literal('anthropic'),
     ...baseLlmProviderSchema.shape,
   }),
@@ -53,6 +62,11 @@ export const llmProviderSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('lm-studio'),
     ...baseLlmProviderSchema.shape,
+  }),
+  z.object({
+    type: z.literal('unsloth'),
+    ...baseLlmProviderSchema.shape,
+    baseUrl: z.string().optional(),
   }),
   z.object({
     type: z.literal('azure-openai'),

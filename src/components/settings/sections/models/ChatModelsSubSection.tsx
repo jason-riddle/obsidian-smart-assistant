@@ -1,4 +1,4 @@
-import { Settings, Trash2 } from 'lucide-react'
+import { Pencil, Settings, Trash2 } from 'lucide-react'
 import { App, Notice } from 'obsidian'
 import { ObsidianToggle } from 'src/components/common/ObsidianToggle'
 
@@ -7,6 +7,7 @@ import { useSettings } from '../../../../contexts/settings-context'
 import SmartComposerPlugin from '../../../../main'
 import { ConfirmModal } from '../../../modals/ConfirmModal'
 import { AddChatModelModal } from '../../modals/AddChatModelModal'
+import { EditChatModelModal } from '../../modals/EditChatModelModal'
 
 import {
   ChatModelSettingsModal,
@@ -117,6 +118,14 @@ export function ChatModelsSubSection({
                 </td>
                 <td>
                   <div className="smtcmp-settings-actions">
+                    <button
+                      onClick={() => {
+                        new EditChatModelModal(app, plugin, chatModel).open()
+                      }}
+                      className="clickable-icon"
+                    >
+                      <Pencil />
+                    </button>
                     {hasChatModelSettings(chatModel) && (
                       <button
                         onClick={() => {

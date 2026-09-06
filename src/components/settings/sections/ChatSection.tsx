@@ -1,14 +1,21 @@
+import { App } from 'obsidian'
+
 import {
   RECOMMENDED_MODELS_FOR_APPLY,
   RECOMMENDED_MODELS_FOR_CHAT,
 } from '../../../constants'
 import { useSettings } from '../../../contexts/settings-context'
+import { FileSuggestInput } from '../../common/FileSuggest'
 import { ObsidianDropdown } from '../../common/ObsidianDropdown'
 import { ObsidianSetting } from '../../common/ObsidianSetting'
 import { ObsidianTextInput } from '../../common/ObsidianTextInput'
 import { ObsidianToggle } from '../../common/ObsidianToggle'
 
-export function ChatSection() {
+type ChatSectionProps = {
+  app: App
+}
+
+export function ChatSection({ app }: ChatSectionProps) {
   const { settings, setSettings } = useSettings()
 
   return (
@@ -65,7 +72,8 @@ export function ChatSection() {
         name="System prompt file"
         desc="Path to a markdown file in your vault whose contents will be added to the beginning of every chat. Leave empty to disable."
       >
-        <ObsidianTextInput
+        <FileSuggestInput
+          app={app}
           value={settings.systemPromptFile}
           placeholder="e.g. Brain/Files/system-prompt.md"
           onChange={async (value: string) => {
