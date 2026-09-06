@@ -79,7 +79,7 @@ export class PromptGenerator {
 
     const systemMessage = this.getSystemMessage()
 
-    const customInstructionMessage = this.getCustomInstructionMessage()
+    const customInstructionMessage = await this.getCustomInstructionMessage()
 
     const currentFile = lastUserMessage.mentionables.find(
       (m) => m.type === 'current-file',
@@ -381,8 +381,16 @@ ${skillsSection}
 Use the \`read_skill\` tool with a skill's name to load its full instructions when you need them.`
   }
 
-  private getCustomInstructionMessage(): RequestMessage | null {
-    const customInstruction = this.settings.systemPrompt.trim()
+  private async getCustomInstructionMessage(): Promise<RequestMessage | null> {
+    const filePath = this.settings.systemPromptFile.trim()
+    if (!filePath) {
+      return null
+    }
+    const file = this.app.vault.getFileByPath(filePath)
+    if (!file) {
+      return null
+    }
+    const customInstruction = (await readTFileContent(file, this.app.vault)).trim()
     if (!customInstruction) {
       return null
     }

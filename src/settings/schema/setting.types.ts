@@ -37,8 +37,8 @@ export const smartComposerSettingsSchema = z.object({
         DEFAULT_CHAT_MODELS[0].id,
     ), // model for apply feature
 
-  // System Prompt
-  systemPrompt: z.string().catch(''),
+  // System Prompt File (vault file path whose contents are used as the custom system prompt)
+  systemPromptFile: z.string().catch(''),
 
   // MCP configuration
   mcp: z

@@ -21,7 +21,7 @@ describe('parseSmartComposerSettings', () => {
       chatModelId: DEFAULT_CHAT_MODEL_ID,
       applyModelId: DEFAULT_APPLY_MODEL_ID,
 
-      systemPrompt: '',
+      systemPromptFile: '',
 
       mcp: {
         servers: [],
