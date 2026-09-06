@@ -19,6 +19,7 @@ import {
 } from '../../types/tool-call.types'
 
 import { InvalidToolNameException, McpNotAvailableException } from './exception'
+import { BearerAuthProvider } from './bearerAuthProvider'
 import { McpOAuthProvider, OAuthTokenStore } from './oauthProvider'
 import {
   getToolName,
@@ -38,6 +39,11 @@ type PendingOAuthFlow = {
   provider: McpOAuthProvider
   serverConfig: McpServerConfig
 }
+
+type AuthProviderShape =
+  | { kind: 'none' }
+  | { kind: 'bearer'; provider: BearerAuthProvider }
+  | { kind: 'oauth'; provider: McpOAuthProvider }
 
 export class McpManager {
   static readonly TOOL_NAME_DELIMITER = '__' // Delimiter for tool name construction (serverName__toolName)
@@ -321,6 +327,38 @@ export class McpManager {
     }
   }
 
+  private buildAuthProvider(
+    name: string,
+    serverParams: McpHttpParameters | McpSseParameters,
+  ): AuthProviderShape {
+    const auth = serverParams.auth
+    if (auth === undefined) {
+      return { kind: 'none' }
+    }
+    if (auth.type === 'bearer') {
+      return { kind: 'bearer', provider: new BearerAuthProvider(auth.token) }
+    }
+    if (auth.type === 'oauth-static') {
+      if (!this.oauthTokenStore) {
+        return { kind: 'none' }
+      }
+      const provider = McpOAuthProvider.createStatic(name, this.oauthTokenStore, {
+        clientId: auth.clientId,
+        clientSecret: auth.clientSecret,
+        authorizationUrl: auth.authorizationUrl,
+        tokenUrl: auth.tokenUrl,
+      })
+      return { kind: 'oauth', provider }
+    }
+    if (!this.oauthTokenStore) {
+      return { kind: 'none' }
+    }
+    return {
+      kind: 'oauth',
+      provider: new McpOAuthProvider(name, this.oauthTokenStore),
+    }
+  }
+
   private async createHttpClient(
     name: string,
     serverParams: McpHttpParameters,
@@ -330,18 +368,14 @@ export class McpManager {
       await import('@modelcontextprotocol/client')
     const headers = serverParams.headers ?? {}
     const url = new URL(serverParams.url)
-    const useOAuth = serverParams.auth?.type === 'oauth'
-    const provider =
-      useOAuth && this.oauthTokenStore
-        ? new McpOAuthProvider(name, this.oauthTokenStore)
-        : undefined
+    const auth = this.buildAuthProvider(name, serverParams)
 
     const tryConnect = async (
       TransportClass: typeof StreamableHTTPClientTransport | typeof SSEClientTransport,
     ): Promise<CreateClientResult> => {
       const opts: Record<string, unknown> = { requestInit: { headers } }
-      if (provider) {
-        opts.authProvider = provider
+      if (auth.kind !== 'none') {
+        opts.authProvider = auth.provider
       }
       const transport = new TransportClass(url, opts)
       const client = new Client({ name, version: '1.0.0' })
@@ -350,11 +384,11 @@ export class McpManager {
         return client
       } catch (error) {
         await client.close().catch(() => {})
-        if (provider && error instanceof UnauthorizedError) {
+        if (auth.kind === 'oauth' && error instanceof UnauthorizedError) {
           return this.registerPendingOAuthFlow(
             name,
             transport,
-            provider,
+            auth.provider,
             serverConfig,
           )
         }
@@ -388,15 +422,11 @@ export class McpManager {
     )
     const headers = serverParams.headers ?? {}
     const url = new URL(serverParams.url)
-    const useOAuth = serverParams.auth?.type === 'oauth'
-    const provider =
-      useOAuth && this.oauthTokenStore
-        ? new McpOAuthProvider(name, this.oauthTokenStore)
-        : undefined
+    const auth = this.buildAuthProvider(name, serverParams)
 
     const opts: Record<string, unknown> = { requestInit: { headers } }
-    if (provider) {
-      opts.authProvider = provider
+    if (auth.kind !== 'none') {
+      opts.authProvider = auth.provider
     }
     const transport = new SSEClientTransport(url, opts)
     const client = new Client({ name, version: '1.0.0' })
@@ -405,11 +435,11 @@ export class McpManager {
       return client
     } catch (error) {
       await client.close().catch(() => {})
-      if (provider && error instanceof UnauthorizedError) {
+      if (auth.kind === 'oauth' && error instanceof UnauthorizedError) {
         return this.registerPendingOAuthFlow(
           name,
           transport,
-          provider,
+          auth.provider,
           serverConfig,
         )
       }

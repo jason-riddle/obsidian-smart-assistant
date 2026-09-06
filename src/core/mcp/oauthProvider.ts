@@ -18,6 +18,13 @@ export type ServerOAuthState = {
   discoveryState?: OAuthDiscoveryState
 }
 
+export type StaticClientInfo = {
+  clientId: string
+  clientSecret?: string
+  authorizationUrl: string
+  tokenUrl: string
+}
+
 export class OAuthTokenStore {
   private app: App
   private filePath: string
@@ -109,10 +116,39 @@ export class OAuthTokenStore {
 export class McpOAuthProvider implements OAuthClientProvider {
   private serverName: string
   private store: OAuthTokenStore
+  private staticClientInfo: StoredOAuthClientInformation | undefined
+  private staticDiscoveryState: OAuthDiscoveryState | undefined
 
   constructor(serverName: string, store: OAuthTokenStore) {
     this.serverName = serverName
     this.store = store
+  }
+
+  static createStatic(
+    serverName: string,
+    store: OAuthTokenStore,
+    staticConfig: StaticClientInfo,
+  ): McpOAuthProvider {
+    const provider = new McpOAuthProvider(serverName, store)
+    const clientInfo: StoredOAuthClientInformation = {
+      client_id: staticConfig.clientId,
+    }
+    if (staticConfig.clientSecret !== undefined) {
+      ;(clientInfo as {
+        client_secret?: string
+      }).client_secret = staticConfig.clientSecret
+    }
+    provider.staticClientInfo = clientInfo
+    const serverInfo = {
+      authorizationServerUrl: staticConfig.authorizationUrl,
+      authorizationServerMetadata: {
+        issuer: staticConfig.authorizationUrl,
+        authorization_endpoint: staticConfig.authorizationUrl,
+        token_endpoint: staticConfig.tokenUrl,
+      },
+    } as unknown as OAuthDiscoveryState
+    provider.staticDiscoveryState = serverInfo
+    return provider
   }
 
   get redirectUrl(): URL {
@@ -132,6 +168,9 @@ export class McpOAuthProvider implements OAuthClientProvider {
   async clientInformation(): Promise<
     StoredOAuthClientInformation | undefined
   > {
+    if (this.staticClientInfo !== undefined) {
+      return this.staticClientInfo
+    }
     const state = await this.store.get(this.serverName)
     return state?.clientInformation
   }
@@ -188,6 +227,9 @@ export class McpOAuthProvider implements OAuthClientProvider {
   }
 
   async discoveryState(): Promise<OAuthDiscoveryState | undefined> {
+    if (this.staticDiscoveryState !== undefined) {
+      return this.staticDiscoveryState
+    }
     const state = await this.store.get(this.serverName)
     return state?.discoveryState
   }

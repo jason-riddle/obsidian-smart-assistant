@@ -14,9 +14,29 @@ export const mcpStdioParamsSchema = z.object({
   env: z.record(z.string(), z.string()).optional(),
 })
 
-export const mcpAuthSchema = z.object({
+export const mcpBearerAuthSchema = z.object({
+  type: z.literal('bearer'),
+  token: z.string(),
+})
+
+export const mcpOAuthStaticAuthSchema = z.object({
+  type: z.literal('oauth-static'),
+  clientId: z.string(),
+  clientSecret: z.string().optional(),
+  authorizationUrl: z.string().url(),
+  tokenUrl: z.string().url(),
+  scopes: z.array(z.string()).optional(),
+})
+
+export const mcpOAuthDcrAuthSchema = z.object({
   type: z.literal('oauth'),
 })
+
+export const mcpAuthSchema = z.discriminatedUnion('type', [
+  mcpBearerAuthSchema,
+  mcpOAuthStaticAuthSchema,
+  mcpOAuthDcrAuthSchema,
+])
 
 export const mcpHttpParamsSchema = z.object({
   type: z.literal('http'),

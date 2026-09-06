@@ -154,4 +154,108 @@ describe("MCP transport config schema", () => {
       expect(() => mcpServerParametersSchema.parse(params)).toThrow()
     })
   })
+
+  describe("MCP auth schema", () => {
+    describe("positive: valid auth configs validate correctly", () => {
+      it("should validate bearer auth with a token", () => {
+        const params = {
+          type: "http",
+          url: "https://example.com/mcp",
+          auth: { type: "bearer", token: "ghp_xxx" },
+        }
+        const result = mcpServerParametersSchema.parse(params)
+        expect(result.type).toBe("http")
+      })
+
+      it("should validate oauth-static auth with clientId, authorizationUrl and tokenUrl", () => {
+        const params = {
+          type: "http",
+          url: "https://example.com/mcp",
+          auth: {
+            type: "oauth-static",
+            clientId: "client-id",
+            authorizationUrl: "https://auth.example.com/authorize",
+            tokenUrl: "https://auth.example.com/token",
+          },
+        }
+        const result = mcpServerParametersSchema.parse(params)
+        expect(result.type).toBe("http")
+      })
+
+      it("should validate oauth-static auth without clientSecret", () => {
+        const params = {
+          type: "sse",
+          url: "https://example.com/sse",
+          auth: {
+            type: "oauth-static",
+            clientId: "client-id",
+            authorizationUrl: "https://auth.example.com/authorize",
+            tokenUrl: "https://auth.example.com/token",
+          },
+        }
+        const result = mcpServerParametersSchema.parse(params)
+        expect(result.type).toBe("sse")
+      })
+
+      it("should validate oauth (DCR) auth with just type", () => {
+        const params = {
+          type: "http",
+          url: "https://example.com/mcp",
+          auth: { type: "oauth" },
+        }
+        const result = mcpServerParametersSchema.parse(params)
+        expect(result.type).toBe("http")
+      })
+    })
+
+    describe("negative: invalid auth configs fail validation", () => {
+      it("should fail validation for bearer auth without a token", () => {
+        const params = {
+          type: "http",
+          url: "https://example.com/mcp",
+          auth: { type: "bearer" },
+        }
+        expect(() => mcpServerParametersSchema.parse(params)).toThrow()
+      })
+
+      it("should fail validation for oauth-static without clientId", () => {
+        const params = {
+          type: "http",
+          url: "https://example.com/mcp",
+          auth: {
+            type: "oauth-static",
+            authorizationUrl: "https://auth.example.com/authorize",
+            tokenUrl: "https://auth.example.com/token",
+          },
+        }
+        expect(() => mcpServerParametersSchema.parse(params)).toThrow()
+      })
+
+      it("should fail validation for oauth-static without authorizationUrl", () => {
+        const params = {
+          type: "http",
+          url: "https://example.com/mcp",
+          auth: {
+            type: "oauth-static",
+            clientId: "client-id",
+            tokenUrl: "https://auth.example.com/token",
+          },
+        }
+        expect(() => mcpServerParametersSchema.parse(params)).toThrow()
+      })
+
+      it("should fail validation for oauth-static without tokenUrl", () => {
+        const params = {
+          type: "http",
+          url: "https://example.com/mcp",
+          auth: {
+            type: "oauth-static",
+            clientId: "client-id",
+            authorizationUrl: "https://auth.example.com/authorize",
+          },
+        }
+        expect(() => mcpServerParametersSchema.parse(params)).toThrow()
+      })
+    })
+  })
 })

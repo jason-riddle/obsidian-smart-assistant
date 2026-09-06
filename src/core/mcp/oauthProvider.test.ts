@@ -193,4 +193,71 @@ describe("McpOAuthProvider", () => {
       expect(storedState).not.toBe(callbackState)
     })
   })
+
+  describe("createStatic", () => {
+    let store: OAuthTokenStore
+
+    beforeEach(() => {
+      jest.clearAllMocks()
+      mockAdapter.exists.mockResolvedValue(false)
+      mockAdapter.read.mockResolvedValue("")
+      store = new OAuthTokenStore(mockApp)
+    })
+
+    it("positive: should pre-populate client information with clientId", async () => {
+      const staticProvider = McpOAuthProvider.createStatic("static-server", store, {
+        clientId: "static-client-id",
+        authorizationUrl: "https://auth.example.com/authorize",
+        tokenUrl: "https://auth.example.com/token",
+      })
+      const info = await staticProvider.clientInformation()
+      expect(info).toBeDefined()
+      expect(info?.client_id).toBe("static-client-id")
+    })
+
+    it("positive: should include client_secret when provided", async () => {
+      const staticProvider = McpOAuthProvider.createStatic("static-server", store, {
+        clientId: "static-client-id",
+        clientSecret: "secret-value",
+        authorizationUrl: "https://auth.example.com/authorize",
+        tokenUrl: "https://auth.example.com/token",
+      })
+      const info = await staticProvider.clientInformation()
+      expect(info?.client_id).toBe("static-client-id")
+      expect((info as { client_secret?: string }).client_secret).toBe(
+        "secret-value",
+      )
+    })
+
+    it("positive: clientInformation() returns static info even when store is empty", async () => {
+      const staticProvider = McpOAuthProvider.createStatic("static-server", store, {
+        clientId: "static-client-id",
+        authorizationUrl: "https://auth.example.com/authorize",
+        tokenUrl: "https://auth.example.com/token",
+      })
+      expect(await store.get("static-server")).toBeUndefined()
+      const info = await staticProvider.clientInformation()
+      expect(info).toBeDefined()
+      expect(info?.client_id).toBe("static-client-id")
+    })
+
+    it("negative: clientInformation() returns undefined when not set and store empty", async () => {
+      const dynamicProvider = new McpOAuthProvider("dynamic-server", store)
+      const info = await dynamicProvider.clientInformation()
+      expect(info).toBeUndefined()
+    })
+
+    it("positive: should pre-populate discovery state with provided endpoints", async () => {
+      const staticProvider = McpOAuthProvider.createStatic("static-server", store, {
+        clientId: "static-client-id",
+        authorizationUrl: "https://auth.example.com/authorize",
+        tokenUrl: "https://auth.example.com/token",
+      })
+      const discovery = await staticProvider.discoveryState()
+      expect(discovery).toBeDefined()
+      expect(discovery?.authorizationServerUrl).toBe(
+        "https://auth.example.com/authorize",
+      )
+    })
+  })
 })

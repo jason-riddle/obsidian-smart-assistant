@@ -48,16 +48,32 @@ function getAuthSummary(server: McpServerState): string | null {
   ) {
     return null
   }
-  if (server.config.parameters.auth?.type !== 'oauth') {
+  const auth = server.config.parameters.auth
+  if (!auth) {
     return null
   }
-  if (server.status === McpServerStatus.Connected) {
-    return 'OAuth: Connected'
+  if (auth.type === 'bearer') {
+    return 'Bearer token'
   }
-  if (server.status === McpServerStatus.AwaitingAuth) {
-    return 'OAuth: Awaiting authorization'
+  if (auth.type === 'oauth-static') {
+    if (server.status === McpServerStatus.Connected) {
+      return 'OAuth 2.0: Connected'
+    }
+    if (server.status === McpServerStatus.AwaitingAuth) {
+      return 'OAuth 2.0: Awaiting authorization'
+    }
+    return 'OAuth 2.0: Not connected'
   }
-  return 'OAuth: Not connected'
+  if (auth.type === 'oauth') {
+    if (server.status === McpServerStatus.Connected) {
+      return 'OAuth 2.1 + DCR: Connected'
+    }
+    if (server.status === McpServerStatus.AwaitingAuth) {
+      return 'OAuth 2.1 + DCR: Awaiting authorization'
+    }
+    return 'OAuth 2.1 + DCR: Not connected'
+  }
+  return null
 }
 
 export function McpSection({ app, plugin }: McpSectionProps) {

@@ -16,11 +16,13 @@ import { ObsidianSetting } from '../../common/ObsidianSetting'
 import { ObsidianTextInput } from '../../common/ObsidianTextInput'
 import { ReactModal } from '../../common/ReactModal'
 
-type AuthType = 'none' | 'oauth'
+type AuthType = 'none' | 'bearer' | 'oauth-static' | 'oauth'
 
 const AUTH_OPTIONS: Record<string, string> = {
   none: 'None',
-  oauth: 'OAuth 2.1',
+  bearer: 'Bearer Token',
+  'oauth-static': 'OAuth 2.0',
+  oauth: 'OAuth 2.1 + DCR',
 }
 
 type McpServerFormComponentProps = {
@@ -146,10 +148,48 @@ function McpServerFormComponent({
       ? jsonStringifyOrEmpty(existingParams.headers)
       : '',
   )
-  const [authType, setAuthType] = useState<AuthType>(
-    existingParams && 'auth' in existingParams && existingParams.auth?.type === 'oauth'
-      ? 'oauth'
-      : 'none',
+  const [authType, setAuthType] = useState<AuthType>(() => {
+    if (existingParams && 'auth' in existingParams && existingParams.auth) {
+      const t = existingParams.auth.type
+      if (
+        t === 'oauth' ||
+        t === 'oauth-static' ||
+        t === 'bearer'
+      ) {
+        return t
+      }
+    }
+    return 'none'
+  })
+  const [bearerToken, setBearerToken] = useState(
+    existingParams && 'auth' in existingParams && existingParams.auth?.type === 'bearer'
+      ? existingParams.auth.token
+      : '',
+  )
+  const [oauthClientId, setOauthClientId] = useState(
+    existingParams && 'auth' in existingParams && existingParams.auth?.type === 'oauth-static'
+      ? existingParams.auth.clientId
+      : '',
+  )
+  const [oauthClientSecret, setOauthClientSecret] = useState(
+    existingParams && 'auth' in existingParams && existingParams.auth?.type === 'oauth-static'
+      ? existingParams.auth.clientSecret ?? ''
+      : '',
+  )
+  const [oauthAuthorizationUrl, setOauthAuthorizationUrl] = useState(
+    existingParams && 'auth' in existingParams && existingParams.auth?.type === 'oauth-static'
+      ? existingParams.auth.authorizationUrl
+      : '',
+  )
+  const [oauthTokenUrl, setOauthTokenUrl] = useState(
+    existingParams && 'auth' in existingParams && existingParams.auth?.type === 'oauth-static'
+      ? existingParams.auth.tokenUrl
+      : '',
+  )
+  const [oauthScopes, setOauthScopes] = useState(
+    existingParams && 'auth' in existingParams && existingParams.auth?.type === 'oauth-static'
+      ? (existingParams.auth.scopes ?? []).join(', ')
+      : '',
   )
 
   const [validationError, setValidationError] = useState<string | null>(null)
@@ -178,11 +218,46 @@ function McpServerFormComponent({
     if (parsedHeaders) {
       params.headers = parsedHeaders
     }
-    if (authType === 'oauth') {
+    if (authType === 'bearer') {
+      params.auth = { type: 'bearer', token: bearerToken }
+    } else if (authType === 'oauth-static') {
+      const auth: Record<string, unknown> = {
+        type: 'oauth-static',
+        clientId: oauthClientId.trim(),
+        authorizationUrl: oauthAuthorizationUrl.trim(),
+        tokenUrl: oauthTokenUrl.trim(),
+      }
+      const secret = oauthClientSecret.trim()
+      if (secret.length > 0) {
+        auth.clientSecret = secret
+      }
+      const scopes = oauthScopes
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0)
+      if (scopes.length > 0) {
+        auth.scopes = scopes
+      }
+      params.auth = auth
+    } else if (authType === 'oauth') {
       params.auth = { type: 'oauth' }
     }
     return params
-  }, [transportType, command, args, env, url, headers, authType])
+  }, [
+    transportType,
+    command,
+    args,
+    env,
+    url,
+    headers,
+    authType,
+    bearerToken,
+    oauthClientId,
+    oauthClientSecret,
+    oauthAuthorizationUrl,
+    oauthTokenUrl,
+    oauthScopes,
+  ])
 
   const validateParameters = useCallback(() => {
     try {
@@ -406,7 +481,7 @@ function McpServerFormComponent({
           </ObsidianSetting>
           <ObsidianSetting
             name="Authentication"
-            desc="OAuth 2.1 uses Dynamic Client Registration (DCR) and PKCE"
+            desc="Bearer: static token. OAuth 2.0: static client (no DCR). OAuth 2.1 + DCR: dynamic registration with PKCE."
           >
             <ObsidianDropdown
               value={authType}
@@ -414,6 +489,87 @@ function McpServerFormComponent({
               onChange={(value: string) => setAuthType(value as AuthType)}
             />
           </ObsidianSetting>
+          {authType === 'bearer' && (
+            <ObsidianSetting
+              name="Bearer Token"
+              desc="Static API key or personal access token sent as the Authorization header"
+              required
+            >
+              <ObsidianTextInput
+                value={bearerToken}
+                onChange={(value: string) => setBearerToken(value)}
+                placeholder="ghp_xxxxxxxxxxxx"
+                type="password"
+              />
+            </ObsidianSetting>
+          )}
+          {authType === 'oauth-static' && (
+            <>
+              <ObsidianSetting
+                name="Client ID"
+                desc="Pre-registered OAuth client identifier"
+                required
+              >
+                <ObsidianTextInput
+                  value={oauthClientId}
+                  onChange={(value: string) => setOauthClientId(value)}
+                  placeholder="client-id"
+                />
+              </ObsidianSetting>
+              <ObsidianSetting
+                name="Client Secret"
+                desc="Optional for public clients (PKCE)"
+              >
+                <ObsidianTextInput
+                  value={oauthClientSecret}
+                  onChange={(value: string) => setOauthClientSecret(value)}
+                  placeholder="client-secret"
+                  type="password"
+                />
+              </ObsidianSetting>
+              <ObsidianSetting
+                name="Authorization URL"
+                desc="OAuth 2.0 authorization endpoint"
+                required
+              >
+                <ObsidianTextInput
+                  value={oauthAuthorizationUrl}
+                  onChange={(value: string) => setOauthAuthorizationUrl(value)}
+                  placeholder="https://example.com/oauth/authorize"
+                />
+              </ObsidianSetting>
+              <ObsidianSetting
+                name="Token URL"
+                desc="OAuth 2.0 token endpoint"
+                required
+              >
+                <ObsidianTextInput
+                  value={oauthTokenUrl}
+                  onChange={(value: string) => setOauthTokenUrl(value)}
+                  placeholder="https://example.com/oauth/token"
+                />
+              </ObsidianSetting>
+              <ObsidianSetting
+                name="Scopes"
+                desc="Comma-separated list of OAuth scopes"
+              >
+                <ObsidianTextInput
+                  value={oauthScopes}
+                  onChange={(value: string) => setOauthScopes(value)}
+                  placeholder="read, write"
+                />
+              </ObsidianSetting>
+              <ObsidianSetting
+                name="OAuth Connection"
+                desc="Save the server first, then click Connect to start the authorization flow in your browser"
+              >
+                <ObsidianButton
+                  text="Connect"
+                  onClick={handleOAuthConnect}
+                />
+              </ObsidianSetting>
+            </>
+          )}
           {authType === 'oauth' && (
             <ObsidianSetting
               name="OAuth Connection"
