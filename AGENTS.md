@@ -492,6 +492,10 @@ The required assets are:
 
 Discovered during development. Append here as new quirks are found.
 
+- **Commented-out code requires context** — When temporarily disabling
+  code by commenting it out, include a brief explanation immediately near
+  the commented code. State what behavior is being investigated, why the
+  code is disabled, and what remains active or how it should be restored.
 - **CI workflow triggers** — The CI workflow
   (`.github/workflows/ci.yml`) runs on `push` to `main`,
   `pull_request` to `main`, and `workflow_dispatch`. Push-triggered
@@ -533,6 +537,23 @@ Discovered during development. Append here as new quirks are found.
   `src/components/settings/sections/McpSection.tsx`. When changing this
   flow, test rapid enabled/disabled updates and delayed connection
   completion, and prefer latest-update-wins behavior.
+- **Skills settings are temporarily hidden for race isolation** — The
+  Skills section in `SettingsTabRoot.tsx` is commented out, not deleted,
+  while investigating the MCP enabled-toggle regression. The observed bug
+  is the toggle switching back and forth after a settings change; the
+  confirmed MCP risk is stale asynchronous connection state, while skills
+  involvement is only a hypothesis because `SkillsProvider` shares the
+  settings context and persists `disabledSkills`. Runtime skill discovery,
+  prompt filtering, the `read_skill` tool, and the chat skills modal remain
+  active. Restore the commented provider/section after the race is isolated.
+- **Recent CI test failures and fixes** — The first CI run failed six tests
+  in three suites: `skillManager.test.ts` failed on quoted frontmatter and
+  string metadata, `settings.test.ts` omitted `disabledSkills: []`, and
+  `oauthProvider.test.ts` used `window` under Jest's `node` environment.
+  These were fixed by stripping frontmatter quotes, accepting string or
+  record metadata, adding the expected disabled-skills default, and mocking
+  `global.window`. Do not treat those historical failures as proof that the
+  current MCP toggle regression is caused by skills.
 
 - **"Etc" section renamed to "Miscellaneous"** — the settings section
   header at the bottom of the settings tab was labeled "Etc". Renamed
