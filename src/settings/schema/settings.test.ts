@@ -22,6 +22,7 @@ describe('parseSmartAssistantSettings', () => {
       applyModelId: DEFAULT_APPLY_MODEL_ID,
 
       systemPromptFile: '',
+      systemPrompt: '',
 
       mcp: {
         servers: [],

@@ -585,12 +585,23 @@ function McpServerFormComponent({
             </>
           )}
           {authType === 'oauth' && (
-            <ObsidianSetting
-              name="OAuth Connection"
-              desc="Save the server first, then click Connect to start the authorization flow in your browser"
-            >
-              <ObsidianButton text="Connect" onClick={handleOAuthConnect} />
-            </ObsidianSetting>
+            <>
+              <ObsidianSetting
+                name="OAuth callback URL"
+                desc="Register this exact callback URL with the MCP server's OAuth client configuration."
+              >
+                <ObsidianTextInput
+                  value="obsidian://smart-assistant/oauth/callback"
+                  onChange={() => undefined}
+                />
+              </ObsidianSetting>
+              <ObsidianSetting
+                name="OAuth Connection"
+                desc="Save the server first, then click Connect to start the authorization flow in your browser"
+              >
+                <ObsidianButton text="Connect" onClick={handleOAuthConnect} />
+              </ObsidianSetting>
+            </>
           )}
         </>
       )}

@@ -37,7 +37,9 @@ export const smartAssistantSettingsSchema = z.object({
         DEFAULT_CHAT_MODELS[0].id,
     ), // model for apply feature
 
-  // System Prompt File (vault file path whose contents are used as the custom system prompt)
+  // Keep the inline prompt as the primary setting. Retain systemPromptFile for
+  // compatibility with settings created before the manual prompt was restored.
+  systemPrompt: z.string().catch(''),
   systemPromptFile: z.string().catch(''),
 
   // Skills that have been disabled by the user (array of skill names)

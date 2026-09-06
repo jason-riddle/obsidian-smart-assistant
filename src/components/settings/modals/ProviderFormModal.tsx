@@ -1,4 +1,4 @@
-import { App, Notice } from 'obsidian'
+import { App, Notice, requestUrl } from 'obsidian'
 import { useState } from 'react'
 
 import { PROVIDER_TYPES_INFO } from '../../../constants'
@@ -58,6 +58,63 @@ function ProviderFormComponent({
           baseUrl: '',
         },
   )
+  const [isTesting, setIsTesting] = useState(false)
+
+  const handleTestConnection = async () => {
+    const validationResult = llmProviderSchema.safeParse(formData)
+    if (!validationResult.success) {
+      new Notice(validationResult.error.issues.map((v) => v.message).join('\n'))
+      return
+    }
+    const baseUrl = formData.baseUrl?.replace(/\/+$/, '')
+    if (!baseUrl) {
+      new Notice('A base URL is required to test this provider.')
+      return
+    }
+    setIsTesting(true)
+    try {
+      const modelsResponse = await requestUrl({
+        url: `${baseUrl}/models`,
+        method: 'GET',
+        headers: formData.apiKey
+          ? { Authorization: `Bearer ${formData.apiKey}` }
+          : undefined,
+      })
+      const model = modelsResponse.json?.data?.[0]?.id
+      if (!model) {
+        throw new Error('The provider returned no models to test.')
+      }
+      const response = await requestUrl({
+        url: `${baseUrl}/chat/completions`,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(formData.apiKey
+            ? { Authorization: `Bearer ${formData.apiKey}` }
+            : {}),
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: 'user', content: 'Say hi' }],
+          max_tokens: 16,
+        }),
+      })
+      const content = response.json?.choices?.[0]?.message?.content as
+        | string
+        | undefined
+      new Notice(
+        content
+          ? `Provider response: ${content}`
+          : 'Provider responded successfully.',
+      )
+    } catch (error) {
+      new Notice(
+        `Provider test failed: ${error instanceof Error ? error.message : String(error)}`,
+      )
+    } finally {
+      setIsTesting(false)
+    }
+  }
 
   const handleSubmit = async () => {
     if (provider) {
@@ -239,6 +296,11 @@ function ProviderFormComponent({
       ))}
 
       <ObsidianSetting>
+        <ObsidianButton
+          text={isTesting ? 'Testing...' : 'Test connection'}
+          onClick={handleTestConnection}
+          disabled={isTesting}
+        />
         <ObsidianButton
           text={provider ? 'Save' : 'Add'}
           onClick={handleSubmit}

@@ -397,27 +397,7 @@ Use the \`read_skill\` tool with a skill's name to load its full instructions wh
   }
 
   private async getCustomInstructionMessage(): Promise<RequestMessage | null> {
-    const filePath = this.settings.systemPromptFile.trim()
-    if (!filePath) {
-      return null
-    }
-    logger.debug(
-      'PromptGenerator',
-      'getCustomInstructionMessage',
-      `Reading system prompt file: ${filePath}`,
-    )
-    const file = this.app.vault.getFileByPath(filePath)
-    if (!file) {
-      logger.warn(
-        'PromptGenerator',
-        'getCustomInstructionMessage',
-        `System prompt file not found: ${filePath}`,
-      )
-      return null
-    }
-    const customInstruction = (
-      await readTFileContent(file, this.app.vault)
-    ).trim()
+    const customInstruction = this.settings.systemPrompt.trim()
     if (!customInstruction) {
       return null
     }

@@ -15,7 +15,7 @@ export const RECOMMENDED_MODELS_FOR_APPLY = ['gpt-5.6-luna']
 export const PROVIDER_TYPES_INFO = {
   aperture: {
     label: 'Aperture',
-    defaultProviderId: null,
+    defaultProviderId: 'aperture',
     requireApiKey: false,
     requireBaseUrl: true,
     additionalSettings: [],
@@ -159,6 +159,11 @@ export const PROVIDER_TYPES_INFO = {
  * 2. If there's same provider id in user's settings, it's data should be overwritten by default provider
  */
 export const DEFAULT_PROVIDERS: readonly LLMProvider[] = [
+  {
+    type: 'aperture',
+    id: PROVIDER_TYPES_INFO.aperture.defaultProviderId,
+    baseUrl: 'https://aperture-ai-gateway.greyhound-little.ts.net/v1',
+  },
   {
     type: 'lm-studio',
     id: PROVIDER_TYPES_INFO['lm-studio'].defaultProviderId,

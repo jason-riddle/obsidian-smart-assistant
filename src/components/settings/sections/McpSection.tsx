@@ -68,6 +68,20 @@ function getAuthSummary(server: McpServerState): string | null {
   return null
 }
 
+function getAuthenticationLabel(server: McpServerState): string {
+  if (
+    server.config.parameters.type !== 'http' &&
+    server.config.parameters.type !== 'sse'
+  ) {
+    return 'None'
+  }
+  const auth = server.config.parameters.auth
+  if (!auth) return 'None'
+  if (auth.type === 'bearer') return 'Bearer token'
+  if (auth.type === 'oauth-static') return 'OAuth 2.0'
+  return 'OAuth 2.1 + DCR'
+}
+
 export function McpSection({ app, plugin }: McpSectionProps) {
   const [mcpManager, setMcpManager] = useState<McpManager | null>(null)
   const [mcpServers, setMcpServers] = useState<McpServerState[]>([])
@@ -124,6 +138,7 @@ export function McpSection({ app, plugin }: McpSectionProps) {
             <div className="smtcmp-mcp-servers-header">
               <div>Server</div>
               <div>Transport</div>
+              <div>Authentication</div>
               <div>Status</div>
               <div>Enabled</div>
               <div>Actions</div>
@@ -215,6 +230,9 @@ function McpServerComponent({
         </div>
         <div className="smtcmp-mcp-server-transport">
           {server.config.parameters.type}
+        </div>
+        <div className="smtcmp-mcp-server-transport">
+          {getAuthenticationLabel(server)}
         </div>
         <div className="smtcmp-mcp-server-status">
           <McpServerStatusBadge status={server.status} />

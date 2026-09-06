@@ -565,21 +565,21 @@ Discovered during development. Append here as new quirks are found.
   edited model is the selected chat/apply model, the selection follows
   the new id. The gear icon (`ChatModelSettingsModal`) still only
   exposes provider-specific options (reasoning, thinking, web_search).
-- **System prompt file input has autocomplete** — the
-  `systemPromptFile` setting uses a `FileSuggestInput` component
-  (`src/components/common/FileSuggest.tsx`) that wraps
-  Obsidian's `AbstractInputSuggest<TFile>` to show a fuzzy-filtered
-  dropdown of markdown files in the vault as the user types.
+- **System prompt is manually entered** — the Chat settings section uses
+  `ObsidianTextArea` and stores the inline value in `systemPrompt`. The
+  legacy `systemPromptFile` field remains in the schema only so settings
+  migrated through schema v20 continue to parse; it is not currently used
+  by prompt generation.
 - **Skills support enable/disable** — a `disabledSkills` string array
   in settings (schema v20) persists disabled skill names. The
   `SkillsProvider` exposes `toggleSkillEnabled`/`isSkillEnabled`;
   `Chat.tsx` and `useChatStreamManager.ts` filter disabled skills out
   of both the system prompt and the `read_skill` tool.
-- **Default providers trimmed to lm-studio, ollama, openai, openrouter,
-  unsloth** — `aperture` and `openai-compatible` remain selectable
-  types but have `defaultProviderId: null` (they require a base URL,
-  so no default instance is shipped). Migration 18→19 removes unused
-  default providers (kept if the user set an API key) and their models.
+- **Default providers include Aperture** — Default providers are sorted
+  alphabetically and include `aperture`, `lm-studio`, `ollama`, `openai`,
+  `openrouter`, and `unsloth`. Aperture uses the configured base URL as-is;
+  enter `https://aperture-ai-gateway.greyhound-little.ts.net/v1` rather than
+  a host URL that requires the provider to append `/v1`.
 - **Default models are OpenAI-only GPT-5.6/GPT-6 family** —
   `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`, `gpt-6-astra`.
   Default chat model `gpt-5.6-sol`, default apply model `gpt-5.6-luna`.
@@ -592,6 +592,19 @@ Discovered during development. Append here as new quirks are found.
   `sk-unsloth-…`, default base URL `http://127.0.0.1:8000`). Both
   live in `src/core/llm/apertureProvider.ts` and
   `src/core/llm/unslothProvider.ts`.
+- **Provider connection validation** — The provider add/edit modal has a
+  `Test connection` action. For OpenAI-compatible endpoints it requests
+  `<baseUrl>/models`, selects the first returned model, then sends a small
+  non-streaming `Say hi` request to `<baseUrl>/chat/completions`. It validates
+  the form first and does not save settings. This is intended for Aperture
+  and custom providers, so it must not hardcode a model or append `/v1`.
+- **MCP authentication is a separate display column** — The MCP server
+  table keeps Transport and Authentication separate. Authentication is
+  `None` for stdio and unauthenticated HTTP/SSE, and identifies bearer,
+  OAuth 2.0 static-client, or OAuth 2.1 + DCR configurations for remote
+  servers. OAuth 2.1 + DCR uses the fixed callback
+  `obsidian://smart-assistant/oauth/callback`, which must be registered with
+  the MCP server.
 - **OpenAI GPT-5.6 family** — launched July 9, 2026. Three tiers:
   Sol ($5/$30), Terra ($2.50/$15), Luna ($1/$6). API model IDs:
   `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`.

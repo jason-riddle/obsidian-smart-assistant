@@ -26,7 +26,7 @@ export class ApertureProvider extends BaseLLMProvider<
     this.adapter = new OpenAIMessageAdapter()
     this.client = new OpenAI({
       apiKey: provider.apiKey ?? '',
-      baseURL: `${provider.baseUrl.replace(/\/+$/, '')}/v1`,
+      baseURL: provider.baseUrl.replace(/\/+$/, ''),
       dangerouslyAllowBrowser: true,
     })
   }

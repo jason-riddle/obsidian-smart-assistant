@@ -1,21 +1,15 @@
-import { App } from 'obsidian'
-
 import {
   RECOMMENDED_MODELS_FOR_APPLY,
   RECOMMENDED_MODELS_FOR_CHAT,
 } from '../../../constants'
 import { useSettings } from '../../../contexts/settings-context'
-import { FileSuggestInput } from '../../common/FileSuggest'
 import { ObsidianDropdown } from '../../common/ObsidianDropdown'
 import { ObsidianSetting } from '../../common/ObsidianSetting'
+import { ObsidianTextArea } from '../../common/ObsidianTextArea'
 import { ObsidianTextInput } from '../../common/ObsidianTextInput'
 import { ObsidianToggle } from '../../common/ObsidianToggle'
 
-type ChatSectionProps = {
-  app: App
-}
-
-export function ChatSection({ app }: ChatSectionProps) {
+export function ChatSection() {
   const { settings, setSettings } = useSettings()
 
   return (
@@ -69,17 +63,17 @@ export function ChatSection({ app }: ChatSectionProps) {
       </ObsidianSetting>
 
       <ObsidianSetting
-        name="System prompt file"
-        desc="Path to a markdown file in your vault whose contents will be added to the beginning of every chat. Leave empty to disable."
-      >
-        <FileSuggestInput
-          app={app}
-          value={settings.systemPromptFile}
-          placeholder="e.g. Brain/Files/system-prompt.md"
+        name="System prompt"
+        desc="This prompt will be added to the beginning of every chat."
+        className="smtcmp-settings-textarea-header"
+      />
+      <ObsidianSetting className="smtcmp-settings-textarea">
+        <ObsidianTextArea
+          value={settings.systemPrompt}
           onChange={async (value: string) => {
             await setSettings({
               ...settings,
-              systemPromptFile: value,
+              systemPrompt: value,
             })
           }}
         />

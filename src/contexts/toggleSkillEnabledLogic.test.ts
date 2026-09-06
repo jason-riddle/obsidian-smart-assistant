@@ -10,6 +10,7 @@ function makeSettings(disabledSkills: string[] = []): SmartAssistantSettings {
     chatModelId: 'gpt-5.6-sol',
     applyModelId: 'gpt-5.6-luna',
     systemPromptFile: '',
+    systemPrompt: '',
     disabledSkills,
     mcp: { servers: [] },
     chatOptions: {

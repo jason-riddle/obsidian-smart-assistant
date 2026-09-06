@@ -26,7 +26,7 @@ type SettingsTabRootProps = {
 export function SettingsTabRoot({ app, plugin }: SettingsTabRootProps) {
   return (
     <>
-      <ChatSection app={app} />
+      <ChatSection />
       <ProvidersSection app={app} plugin={plugin} />
       <ModelsSection app={app} plugin={plugin} />
       <McpSection app={app} plugin={plugin} />
