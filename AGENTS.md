@@ -453,11 +453,26 @@ The required assets are:
 
 1. Verify `manifest.json` and `package.json` versions match
 2. Run `npm run build` — must pass (produces `main.js`)
-3. `git tag -a X.Y.Z -m "X.Y.Z — summary"`
-4. `git push origin X.Y.Z`
-5. `gh release create X.Y.Z --title "X.Y.Z" --notes "..."`
-6. `gh release upload X.Y.Z main.js manifest.json styles.css --clobber`
-7. Verify: `gh release view X.Y.Z --json assets --jq '.assets[].name'`
+3. `git push origin main`
+4. **Wait for CI to pass** — after pushing to `main`, the CI workflow
+   (`.github/workflows/ci.yml`) runs typecheck, lint, and tests. Before
+   tagging a release, confirm CI is running and wait for it to pass:
+
+   ```bash
+   # Confirm CI is running (should show "in_progress" or "queued")
+   gh run list --workflow=ci.yml --branch=main --limit=1
+
+   # Wait for the latest CI run on main to complete (blocks until done)
+   gh run watch --exit-status $(gh run list --workflow=ci.yml --branch=main --limit=1 --json databaseId --jq '.[0].databaseId')
+   ```
+
+   If CI fails, fix the issue and re-push before tagging. Do NOT tag a
+   release while CI is failing.
+5. `git tag -a X.Y.Z -m "X.Y.Z — summary"`
+6. `git push origin X.Y.Z`
+7. `gh release create X.Y.Z --title "X.Y.Z" --notes "..."`
+8. `gh release upload X.Y.Z main.js manifest.json styles.css --clobber`
+9. Verify: `gh release view X.Y.Z --json assets --jq '.assets[].name'`
    should list all three files
 
 > **Tag format:** Use `X.Y.Z` (e.g. `2.1.1`), NOT `vX.Y.Z` (e.g.
