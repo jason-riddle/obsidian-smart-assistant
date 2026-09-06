@@ -4,7 +4,6 @@ import React from 'react'
 
 import {
   DEFAULT_PROVIDERS,
-  PLAN_PROVIDER_TYPES,
   PROVIDER_TYPES_INFO,
 } from '../../../constants'
 import { useSettings } from '../../../contexts/settings-context'
@@ -23,9 +22,7 @@ type ProvidersSectionProps = {
 
 export function ProvidersSection({ app, plugin }: ProvidersSectionProps) {
   const { settings, setSettings } = useSettings()
-  const apiProviders = settings.providers.filter(
-    (p) => !PLAN_PROVIDER_TYPES.includes(p.type),
-  )
+  const apiProviders = settings.providers
 
   const handleDeleteProvider = async (provider: LLMProvider) => {
     // Get associated models

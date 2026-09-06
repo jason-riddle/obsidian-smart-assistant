@@ -46,8 +46,8 @@ npm run test         # jest
 - **`src/core/llm/`** — LLM provider implementations.
   - `base.ts` — Abstract `BaseLLMProvider` class.
   - `manager.ts` — Provider factory and registration.
-  - Providers: OpenAI, Anthropic, Gemini, Groq, Ollama, Mistral, Perplexity,
-    xAI, DeepSeek, Azure OpenAI, LM Studio, OpenRouter, Codex, Claude Code.
+  - Providers: OpenAI, Anthropic, Gemini, Ollama, Mistral, Perplexity,
+    xAI, DeepSeek, Azure OpenAI, LM Studio, OpenRouter.
   - Message adapters for non-OpenAI-compatible providers.
 
 ### Settings system
