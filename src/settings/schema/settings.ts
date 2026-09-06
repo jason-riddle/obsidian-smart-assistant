@@ -2,8 +2,8 @@ import { logger } from '../../utils/logger'
 
 import { SETTINGS_SCHEMA_VERSION, SETTING_MIGRATIONS } from './migrations'
 import {
-  SmartComposerSettings,
-  smartComposerSettingsSchema,
+  SmartAssistantSettings,
+  smartAssistantSettingsSchema,
 } from './setting.types'
 
 function migrateSettings(
@@ -37,19 +37,19 @@ function migrateSettings(
   return currentData
 }
 
-export function parseSmartComposerSettings(
+export function parseSmartAssistantSettings(
   data: unknown,
-): SmartComposerSettings {
+): SmartAssistantSettings {
   try {
     const migratedData = migrateSettings(data as Record<string, unknown>)
-    return smartComposerSettingsSchema.parse(migratedData)
+    return smartAssistantSettingsSchema.parse(migratedData)
   } catch (error) {
     logger.warn(
       'settings',
-      'parseSmartComposerSettings',
+      'parseSmartAssistantSettings',
       'Invalid settings provided, using defaults',
       error,
     )
-    return smartComposerSettingsSchema.parse({})
+    return smartAssistantSettingsSchema.parse({})
   }
 }

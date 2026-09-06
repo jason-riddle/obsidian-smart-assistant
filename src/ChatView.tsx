@@ -13,7 +13,7 @@ import { McpProvider } from './contexts/mcp-context'
 import { PluginProvider } from './contexts/plugin-context'
 import { SettingsProvider } from './contexts/settings-context'
 import { SkillsProvider } from './contexts/skills-context'
-import SmartComposerPlugin from './main'
+import SmartAssistantPlugin from './main'
 import { MentionableBlockData } from './types/mentionable'
 
 export class ChatView extends ItemView {
@@ -23,7 +23,7 @@ export class ChatView extends ItemView {
 
   constructor(
     leaf: WorkspaceLeaf,
-    private plugin: SmartComposerPlugin,
+    private plugin: SmartAssistantPlugin,
   ) {
     super(leaf)
     this.initialChatProps = plugin.initialChatProps
@@ -38,7 +38,7 @@ export class ChatView extends ItemView {
   }
 
   getDisplayText() {
-    return 'Smart composer chat'
+    return 'Smart Assistant chat'
   }
 
   async onOpen() {

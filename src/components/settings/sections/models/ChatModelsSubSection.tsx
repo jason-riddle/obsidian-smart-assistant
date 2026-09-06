@@ -4,7 +4,7 @@ import { ObsidianToggle } from 'src/components/common/ObsidianToggle'
 
 import { DEFAULT_CHAT_MODELS } from '../../../../constants'
 import { useSettings } from '../../../../contexts/settings-context'
-import SmartComposerPlugin from '../../../../main'
+import SmartAssistantPlugin from '../../../../main'
 import { ConfirmModal } from '../../../modals/ConfirmModal'
 import { AddChatModelModal } from '../../modals/AddChatModelModal'
 import { EditChatModelModal } from '../../modals/EditChatModelModal'
@@ -16,7 +16,7 @@ import {
 
 type ChatModelsSubSectionProps = {
   app: App
-  plugin: SmartComposerPlugin
+  plugin: SmartAssistantPlugin
 }
 
 const isEnabled = (enable: boolean | undefined | null) => enable ?? true

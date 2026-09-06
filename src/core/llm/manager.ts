@@ -1,4 +1,4 @@
-import { SmartComposerSettings } from '../../settings/schema/setting.types'
+import { SmartAssistantSettings } from '../../settings/schema/setting.types'
 import { ChatModel } from '../../types/chat-model.types'
 import { LLMProvider } from '../../types/provider.types'
 import { logger } from '../../utils/logger'
@@ -30,7 +30,7 @@ export function getProviderClient({
   settings,
 }: {
   providerId: string
-  settings: SmartComposerSettings
+  settings: SmartAssistantSettings
 }): BaseLLMProvider<LLMProvider> {
   const provider = settings.providers.find((p) => p.id === providerId)
   if (!provider) {
@@ -88,7 +88,7 @@ export function getChatModelClient({
   settings,
 }: {
   modelId: string
-  settings: SmartComposerSettings
+  settings: SmartAssistantSettings
 }): {
   providerClient: BaseLLMProvider<LLMProvider>
   model: ChatModel

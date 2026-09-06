@@ -2,7 +2,7 @@ import { App } from 'obsidian'
 
 import { AppProvider } from '../../contexts/app-context'
 import { SkillsProvider } from '../../contexts/skills-context'
-import SmartComposerPlugin from '../../main'
+import SmartAssistantPlugin from '../../main'
 
 import { ChatSection } from './sections/ChatSection'
 import { McpSection } from './sections/McpSection'
@@ -13,7 +13,7 @@ import { SkillsSection } from './sections/SkillsSection'
 
 type SettingsTabRootProps = {
   app: App
-  plugin: SmartComposerPlugin
+  plugin: SmartAssistantPlugin
 }
 
 export function SettingsTabRoot({ app, plugin }: SettingsTabRootProps) {

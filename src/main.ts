@@ -7,18 +7,19 @@ import { APPLY_VIEW_TYPE, CHAT_VIEW_TYPE } from './constants'
 import { McpManager } from './core/mcp/mcpManager'
 import { migrateToJsonDatabase } from './database/json/migrateToJsonDatabase'
 import {
-  SmartComposerSettings,
-  smartComposerSettingsSchema,
+  SmartAssistantSettings,
+  smartAssistantSettingsSchema,
 } from './settings/schema/setting.types'
-import { parseSmartComposerSettings } from './settings/schema/settings'
-import { SmartComposerSettingTab } from './settings/SettingTab'
+import { parseSmartAssistantSettings } from './settings/schema/settings'
+import { SmartAssistantSettingTab } from './settings/SettingTab'
 import { logger } from './utils/logger'
 import { getMentionableBlockData } from './utils/obsidian'
 
-export default class SmartComposerPlugin extends Plugin {
-  settings: SmartComposerSettings
+export default class SmartAssistantPlugin extends Plugin {
+  settings: SmartAssistantSettings
   initialChatProps?: ChatProps // TODO: change this to use view state like ApplyView
-  settingsChangeListeners: ((newSettings: SmartComposerSettings) => void)[] = []
+  settingsChangeListeners: ((newSettings: SmartAssistantSettings) => void)[] =
+    []
   mcpManager: McpManager | null = null
 
   async onload() {
@@ -30,7 +31,7 @@ export default class SmartComposerPlugin extends Plugin {
     this.registerView(APPLY_VIEW_TYPE, (leaf) => new ApplyView(leaf))
 
     // This creates an icon in the left ribbon.
-    this.addRibbonIcon('wand-sparkles', 'Open smart composer', () =>
+    this.addRibbonIcon('wand-sparkles', 'Open Smart Assistant', () =>
       this.openChatView(),
     )
 
@@ -50,7 +51,7 @@ export default class SmartComposerPlugin extends Plugin {
     })
 
     // This adds a settings tab so the user can configure various aspects of the plugin
-    this.addSettingTab(new SmartComposerSettingTab(this.app, this))
+    this.addSettingTab(new SmartAssistantSettingTab(this.app, this))
 
     this.registerObsidianProtocolHandler(
       'smart-assistant/oauth/callback',
@@ -71,12 +72,12 @@ export default class SmartComposerPlugin extends Plugin {
 
   async loadSettings() {
     logger.debug('main', 'loadSettings', 'Loading settings...')
-    this.settings = parseSmartComposerSettings(await this.loadData())
+    this.settings = parseSmartAssistantSettings(await this.loadData())
     await this.saveData(this.settings) // Save updated settings
   }
 
-  async setSettings(newSettings: SmartComposerSettings) {
-    const validationResult = smartComposerSettingsSchema.safeParse(newSettings)
+  async setSettings(newSettings: SmartAssistantSettings) {
+    const validationResult = smartAssistantSettingsSchema.safeParse(newSettings)
 
     if (!validationResult.success) {
       new Notice(`Invalid settings:
@@ -91,7 +92,7 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
   }
 
   addSettingsChangeListener(
-    listener: (newSettings: SmartComposerSettings) => void,
+    listener: (newSettings: SmartAssistantSettings) => void,
   ) {
     this.settingsChangeListeners.push(listener)
     return () => {
@@ -166,7 +167,7 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
       this.mcpManager = new McpManager({
         settings: this.settings,
         registerSettingsListener: (
-          listener: (settings: SmartComposerSettings) => void,
+          listener: (settings: SmartAssistantSettings) => void,
         ) => this.addSettingsChangeListener(listener),
         app: this.app,
       })
@@ -206,7 +207,7 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
     if (leaves.length === 0 || !(leaves[0].view instanceof ChatView)) {
       return
     }
-    new Notice('Reloading "smart-composer" due to migration', 1000)
+    new Notice('Reloading "smart-assistant" due to migration', 1000)
     leaves[0].detach()
     await this.activateChatView()
   }

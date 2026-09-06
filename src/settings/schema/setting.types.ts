@@ -16,7 +16,7 @@ import { SETTINGS_SCHEMA_VERSION } from './migrations'
  * Settings
  */
 
-export const smartComposerSettingsSchema = z.object({
+export const smartAssistantSettingsSchema = z.object({
   // Version
   version: z.literal(SETTINGS_SCHEMA_VERSION).catch(SETTINGS_SCHEMA_VERSION),
 
@@ -65,7 +65,9 @@ export const smartComposerSettingsSchema = z.object({
       maxAutoIterations: 1,
     }),
 })
-export type SmartComposerSettings = z.infer<typeof smartComposerSettingsSchema>
+export type SmartAssistantSettings = z.infer<
+  typeof smartAssistantSettingsSchema
+>
 
 export type SettingMigration = {
   fromVersion: number

@@ -1,7 +1,7 @@
 import { App, Notice } from 'obsidian'
 import { useState } from 'react'
 
-import SmartComposerPlugin from '../../../main'
+import SmartAssistantPlugin from '../../../main'
 import { ChatModel, chatModelSchema } from '../../../types/chat-model.types'
 import { PromptLevel } from '../../../types/prompt-level.types'
 import { ObsidianButton } from '../../common/ObsidianButton'
@@ -11,13 +11,13 @@ import { ObsidianTextInput } from '../../common/ObsidianTextInput'
 import { ReactModal } from '../../common/ReactModal'
 
 type EditChatModelModalComponentProps = {
-  plugin: SmartComposerPlugin
+  plugin: SmartAssistantPlugin
   model: ChatModel
   onClose: () => void
 }
 
 export class EditChatModelModal extends ReactModal<EditChatModelModalComponentProps> {
-  constructor(app: App, plugin: SmartComposerPlugin, model: ChatModel) {
+  constructor(app: App, plugin: SmartAssistantPlugin, model: ChatModel) {
     super({
       app: app,
       Component: EditChatModelModalComponent,

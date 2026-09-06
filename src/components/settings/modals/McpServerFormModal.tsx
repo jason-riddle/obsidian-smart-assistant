@@ -4,7 +4,7 @@ import TextareaAutosize from 'react-textarea-autosize'
 import * as z from 'zod'
 
 import { validateServerName } from '../../../core/mcp/tool-name-utils'
-import SmartComposerPlugin from '../../../main'
+import SmartAssistantPlugin from '../../../main'
 import {
   McpServerParameters,
   McpTransportType,
@@ -27,7 +27,7 @@ const AUTH_OPTIONS: Record<string, string> = {
 }
 
 type McpServerFormComponentProps = {
-  plugin: SmartComposerPlugin
+  plugin: SmartAssistantPlugin
   onClose: () => void
   serverId?: string
 }
@@ -86,7 +86,7 @@ function parseJsonOrUndefined(
 }
 
 export class AddMcpServerModal extends ReactModal<McpServerFormComponentProps> {
-  constructor(app: App, plugin: SmartComposerPlugin) {
+  constructor(app: App, plugin: SmartAssistantPlugin) {
     super({
       app: app,
       Component: McpServerFormComponent,
@@ -99,7 +99,7 @@ export class AddMcpServerModal extends ReactModal<McpServerFormComponentProps> {
 }
 
 export class EditMcpServerModal extends ReactModal<McpServerFormComponentProps> {
-  constructor(app: App, plugin: SmartComposerPlugin, editServerId: string) {
+  constructor(app: App, plugin: SmartAssistantPlugin, editServerId: string) {
     super({
       app: app,
       Component: McpServerFormComponent,

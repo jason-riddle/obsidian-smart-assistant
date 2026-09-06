@@ -1,7 +1,7 @@
 import { App, Notice } from 'obsidian'
 import { useState } from 'react'
 
-import SmartComposerPlugin from '../../../../main'
+import SmartAssistantPlugin from '../../../../main'
 import { ChatModel, chatModelSchema } from '../../../../types/chat-model.types'
 import { ObsidianButton } from '../../../common/ObsidianButton'
 import { ObsidianDropdown } from '../../../common/ObsidianDropdown'
@@ -12,12 +12,12 @@ import { ReactModal } from '../../../common/ReactModal'
 
 type SettingsComponentProps = {
   model: ChatModel
-  plugin: SmartComposerPlugin
+  plugin: SmartAssistantPlugin
   onClose: () => void
 }
 
 export class ChatModelSettingsModal extends ReactModal<SettingsComponentProps> {
-  constructor(model: ChatModel, app: App, plugin: SmartComposerPlugin) {
+  constructor(model: ChatModel, app: App, plugin: SmartAssistantPlugin) {
     const modelSettings = getModelSettings(model)
     super({
       app: app,

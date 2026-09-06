@@ -8,7 +8,7 @@ updated: "2026-09-05"
 # AGENTS.md — obsidian-smart-assistant
 
 Obsidian plugin providing AI chat, MCP (Model Context Protocol) tool
-integration, and agent skills. Forked from obsidian-smart-composer.
+integration, and agent skills.
 
 ## Build / Test / Lint Commands
 
@@ -513,8 +513,13 @@ Discovered during development. Append here as new quirks are found.
   simple frontmatter parser produces strings, not nested objects.
 - **`disabledSkills` in settings test** — The settings test
   (`settings.test.ts`) must include `disabledSkills: []` in the
-  expected output of `parseSmartComposerSettings({})` (added in
+  expected output of `parseSmartAssistantSettings({})` (added in
   schema v20).
+- **MCP enabled toggles use persisted settings** — The MCP server list
+  renders the enabled toggle from the current settings context instead
+  of async connection state. `McpManager.handleSettingsUpdate` serializes
+  settings updates so an older connection result cannot overwrite a newer
+  enabled/disabled choice.
 
 - **"Etc" section renamed to "Miscellaneous"** — the settings section
   header at the bottom of the settings tab was labeled "Etc". Renamed
@@ -558,4 +563,3 @@ Discovered during development. Append here as new quirks are found.
   `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`.
 - **OpenAI GPT-6 Astra** — launched September 3, 2026. API model ID:
   `gpt-6-astra`. Pricing $10/$50 per 1M tokens.
-

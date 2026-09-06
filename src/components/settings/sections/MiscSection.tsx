@@ -1,15 +1,15 @@
 import { App, Notice } from 'obsidian'
 
 import { useSettings } from '../../../contexts/settings-context'
-import SmartComposerPlugin from '../../../main'
-import { smartComposerSettingsSchema } from '../../../settings/schema/setting.types'
+import SmartAssistantPlugin from '../../../main'
+import { smartAssistantSettingsSchema } from '../../../settings/schema/setting.types'
 import { ObsidianButton } from '../../common/ObsidianButton'
 import { ObsidianSetting } from '../../common/ObsidianSetting'
 import { ConfirmModal } from '../../modals/ConfirmModal'
 
 type MiscSectionProps = {
   app: App
-  plugin: SmartComposerPlugin
+  plugin: SmartAssistantPlugin
 }
 
 export function MiscSection({ app }: MiscSectionProps) {
@@ -22,7 +22,7 @@ export function MiscSection({ app }: MiscSectionProps) {
         'Are you sure you want to reset all settings to default values? This cannot be undone.',
       ctaText: 'Reset',
       onConfirm: async () => {
-        const defaultSettings = smartComposerSettingsSchema.parse({})
+        const defaultSettings = smartAssistantSettingsSchema.parse({})
         await setSettings(defaultSettings)
         new Notice('Settings have been reset to defaults')
       },

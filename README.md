@@ -13,7 +13,7 @@ AI by easily referencing your vault content. Inspired by Cursor AI and
 ChatGPT Canvas, it unifies your note-taking and content creation process
 within Obsidian.
 
-This is a fork of [obsidian-smart-composer](https://github.com/glowingjade/obsidian-smart-composer)
+Smart Assistant is an Obsidian plugin for AI chat, note context, smart writing assistance, and one-click edits.
 maintained by [Jason Riddle](https://github.com/jason-riddle).
 
 ## Features

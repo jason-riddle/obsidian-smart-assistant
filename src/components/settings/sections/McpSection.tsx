@@ -14,7 +14,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { useSettings } from '../../../contexts/settings-context'
 import { McpManager } from '../../../core/mcp/mcpManager'
-import SmartComposerPlugin from '../../../main'
+import SmartAssistantPlugin from '../../../main'
 import {
   McpServerState,
   McpServerStatus,
@@ -30,7 +30,7 @@ import {
 
 type McpSectionProps = {
   app: App
-  plugin: SmartComposerPlugin
+  plugin: SmartAssistantPlugin
 }
 
 function getAuthSummary(server: McpServerState): string | null {
@@ -156,7 +156,7 @@ function McpServerComponent({
 }: {
   server: McpServerState
   app: App
-  plugin: SmartComposerPlugin
+  plugin: SmartAssistantPlugin
 }) {
   const { settings, setSettings } = useSettings()
   const [isOpen, setIsOpen] = useState(false)
@@ -198,6 +198,10 @@ function McpServerComponent({
     [settings, setSettings, server.name],
   )
 
+  const configuredServer = settings.mcp.servers.find(
+    (configured) => configured.id === server.name,
+  )
+
   return (
     <div className="smtcmp-mcp-server">
       <div className="smtcmp-mcp-server-row">
@@ -217,7 +221,7 @@ function McpServerComponent({
         </div>
         <div className="smtcmp-mcp-server-toggle">
           <ObsidianToggle
-            value={server.config.enabled}
+            value={configuredServer?.enabled ?? server.config.enabled}
             onChange={handleToggleEnabled}
           />
         </div>

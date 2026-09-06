@@ -6,11 +6,11 @@ import {
 } from '../../constants'
 
 import { SETTINGS_SCHEMA_VERSION } from './migrations'
-import { parseSmartComposerSettings } from './settings'
+import { parseSmartAssistantSettings } from './settings'
 
-describe('parseSmartComposerSettings', () => {
+describe('parseSmartAssistantSettings', () => {
   it('should return default values for empty input', () => {
-    const result = parseSmartComposerSettings({})
+    const result = parseSmartAssistantSettings({})
     expect(result).toEqual({
       version: SETTINGS_SCHEMA_VERSION,
 

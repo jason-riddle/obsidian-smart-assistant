@@ -4,7 +4,7 @@ import React from 'react'
 
 import { DEFAULT_PROVIDERS, PROVIDER_TYPES_INFO } from '../../../constants'
 import { useSettings } from '../../../contexts/settings-context'
-import SmartComposerPlugin from '../../../main'
+import SmartAssistantPlugin from '../../../main'
 import { LLMProvider } from '../../../types/provider.types'
 import { ConfirmModal } from '../../modals/ConfirmModal'
 import {
@@ -14,7 +14,7 @@ import {
 
 type ProvidersSectionProps = {
   app: App
-  plugin: SmartComposerPlugin
+  plugin: SmartAssistantPlugin
 }
 
 export function ProvidersSection({ app, plugin }: ProvidersSectionProps) {
@@ -58,7 +58,7 @@ export function ProvidersSection({ app, plugin }: ProvidersSectionProps) {
         <span>Configure API providers (usage-based billing).</span>
         <br />
         <a
-          href="https://github.com/glowingjade/obsidian-smart-composer/wiki/1.2-Initial-Setup#getting-your-api-key"
+          href="https://github.com/jason-riddle/obsidian-smart-assistant/wiki/1.2-Initial-Setup#getting-your-api-key"
           target="_blank"
           rel="noopener noreferrer"
         >

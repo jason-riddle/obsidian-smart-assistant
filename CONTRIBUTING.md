@@ -1,19 +1,19 @@
-# Contributing to Obsidian Smart Composer
+# Contributing to Obsidian Smart Assistant
 
-We welcome contributions to Obsidian Smart Composer! This document will guide you through the process of contributing to the project.
+We welcome contributions to Obsidian Smart Assistant! This document will guide you through the process of contributing to the project.
 
 ## Development Workflow
 
 1. Clone the repository to your Obsidian vault's plugins directory:
 
    ```
-   git clone https://github.com/glowingjade/obsidian-smart-composer.git /path/to/your/vault/.obsidian/plugins/obsidian-smart-composer
+   git clone https://github.com/jason-riddle/obsidian-smart-assistant.git /path/to/your/vault/.obsidian/plugins/smart-assistant
    ```
 
 2. Navigate to the plugin directory:
 
    ```
-   cd /path/to/your/vault/.obsidian/plugins/obsidian-smart-composer
+   cd /path/to/your/vault/.obsidian/plugins/smart-assistant
    ```
 
 3. Run the following commands to install dependencies and start the development server:
@@ -121,8 +121,8 @@ The core team is monitoring for pull requests. We will review your pull request 
 For common development issues, their solutions, and other helpful information for contributors, please refer to the following resources:
 
 1. [DEVELOPMENT.md](./DEVELOPMENT.md): Contains detailed information about the development process, common issues, and their solutions.
-2. [Issue Tracker](https://github.com/glowingjade/obsidian-smart-composer/issues): Check our issue tracker for detailed problem descriptions and solutions.
-3. [GitHub Discussions](https://github.com/glowingjade/obsidian-smart-composer/discussions): Join our community discussions for interactive problem-solving and knowledge sharing.
+2. [Issue Tracker](https://github.com/jason-riddle/obsidian-smart-assistant/issues): Check our issue tracker for detailed problem descriptions and solutions.
+3. [GitHub Discussions](https://github.com/jason-riddle/obsidian-smart-assistant/discussions): Join our community discussions for interactive problem-solving and knowledge sharing.
 
 We encourage contributors to review these resources before starting development and to help keep them updated with new findings.
 

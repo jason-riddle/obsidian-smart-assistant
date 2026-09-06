@@ -3,17 +3,17 @@ import { App } from 'obsidian'
 import { AppProvider } from '../../contexts/app-context'
 import { SettingsProvider } from '../../contexts/settings-context'
 import { SkillsProvider } from '../../contexts/skills-context'
-import SmartComposerPlugin from '../../main'
+import SmartAssistantPlugin from '../../main'
 import { ReactModal } from '../common/ReactModal'
 import { SkillsSection } from '../settings/sections/SkillsSection'
 
 type SkillsSectionModalProps = {
   app: App
-  plugin: SmartComposerPlugin
+  plugin: SmartAssistantPlugin
 }
 
 export class SkillsSectionModal extends ReactModal<SkillsSectionModalProps> {
-  constructor(app: App, plugin: SmartComposerPlugin) {
+  constructor(app: App, plugin: SmartAssistantPlugin) {
     super({
       app: app,
       Component: SkillsSectionComponent,

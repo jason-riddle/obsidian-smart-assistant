@@ -2,7 +2,7 @@ import { App, TFile, htmlToMarkdown, requestUrl } from 'obsidian'
 
 import { editorStateToPlainText } from '../../components/chat-view/chat-input/utils/editor-state-to-plain-text'
 import { Skill } from '../../core/skills/types'
-import { SmartComposerSettings } from '../../settings/schema/setting.types'
+import { SmartAssistantSettings } from '../../settings/schema/setting.types'
 import {
   ChatAssistantMessage,
   ChatMessage,
@@ -30,11 +30,15 @@ import { YoutubeTranscript, isYoutubeUrl } from './youtube-transcript'
 
 export class PromptGenerator {
   private app: App
-  private settings: SmartComposerSettings
+  private settings: SmartAssistantSettings
   private skills: Skill[]
   private MAX_CONTEXT_MESSAGES = 20
 
-  constructor(app: App, settings: SmartComposerSettings, skills: Skill[] = []) {
+  constructor(
+    app: App,
+    settings: SmartAssistantSettings,
+    skills: Skill[] = [],
+  ) {
     this.app = app
     this.settings = settings
     this.skills = skills

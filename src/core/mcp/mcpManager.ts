@@ -1,7 +1,7 @@
 import isEqual from 'lodash.isequal'
 import { App, Platform } from 'obsidian'
 
-import { SmartComposerSettings } from '../../settings/schema/setting.types'
+import { SmartAssistantSettings } from '../../settings/schema/setting.types'
 import {
   McpClient,
   McpHttpParameters,
@@ -52,11 +52,12 @@ export class McpManager {
 
   public readonly disabled = !Platform.isDesktop // MCP should be disabled on mobile since it doesn't support node.js
 
-  private settings: SmartComposerSettings
+  private settings: SmartAssistantSettings
   private unsubscribeFromSettings: () => void
   private defaultEnv: Record<string, string>
   private oauthTokenStore: OAuthTokenStore | null = null
   private pendingOAuthFlows: Map<string, PendingOAuthFlow> = new Map()
+  private settingsUpdateQueue: Promise<void> = Promise.resolve()
 
   private servers: McpServerState[] = [] // IMPORTANT: Always use this.updateServers() to update this array
   private activeToolCalls: Map<string, AbortController> = new Map()
@@ -70,9 +71,9 @@ export class McpManager {
     registerSettingsListener,
     app,
   }: {
-    settings: SmartComposerSettings
+    settings: SmartAssistantSettings
     registerSettingsListener: (
-      listener: (settings: SmartComposerSettings) => void,
+      listener: (settings: SmartAssistantSettings) => void,
     ) => () => void
     app: App
   }) {
@@ -138,7 +139,22 @@ export class McpManager {
     return () => this.subscribers.delete(callback)
   }
 
-  public async handleSettingsUpdate(settings: SmartComposerSettings) {
+  public async handleSettingsUpdate(settings: SmartAssistantSettings) {
+    this.settingsUpdateQueue = this.settingsUpdateQueue
+      .catch((error) => {
+        logger.error(
+          'McpManager',
+          'handleSettingsUpdate',
+          'Previous settings update failed',
+          error,
+        )
+      })
+      .then(() => this.applySettingsUpdate(settings))
+
+    return this.settingsUpdateQueue
+  }
+
+  private async applySettingsUpdate(settings: SmartAssistantSettings) {
     this.settings = settings
     const updatedServers = settings.mcp.servers.map(
       (serverConfig: McpServerConfig): McpServerState => {

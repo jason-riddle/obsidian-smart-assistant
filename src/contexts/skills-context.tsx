@@ -5,15 +5,16 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 
 import { SkillManager } from '../core/skills/skillManager'
 import { Skill } from '../core/skills/types'
-import { SmartComposerSettings } from '../settings/schema/setting.types'
 
 import { useApp } from './app-context'
 import { useSettings } from './settings-context'
+import { toggleSkillEnabledLogic } from './toggleSkillEnabledLogic'
 
 export type SkillsContextType = {
   skills: Skill[]
@@ -50,20 +51,15 @@ export function SkillsProvider({ children }: PropsWithChildren) {
 
   const getSkillManager = useCallback(() => skillManager, [skillManager])
 
+  const settingsRef = useRef(settings)
+  settingsRef.current = settings
+
   const toggleSkillEnabled = useCallback(
     async (skillName: string) => {
-      const current = settings.disabledSkills
-      const isDisabled = current.includes(skillName)
-      const newDisabledSkills = isDisabled
-        ? current.filter((name) => name !== skillName)
-        : [...current, skillName]
-      const newSettings: SmartComposerSettings = {
-        ...settings,
-        disabledSkills: newDisabledSkills,
-      }
-      await setSettings(newSettings)
+      const current = settingsRef.current
+      await setSettings(toggleSkillEnabledLogic(current, skillName))
     },
-    [settings, setSettings],
+    [setSettings],
   )
 
   const isSkillEnabled = useCallback(
