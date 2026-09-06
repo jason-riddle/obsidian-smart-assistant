@@ -520,6 +520,19 @@ Discovered during development. Append here as new quirks are found.
   of async connection state. `McpManager.handleSettingsUpdate` serializes
   settings updates so an older connection result cannot overwrite a newer
   enabled/disabled choice.
+- **MCP settings updates are race-sensitive** — A settings change can
+  start an asynchronous connect or disconnect while a later toggle is
+  already persisted. Never publish a completed connection result without
+  preserving the latest configuration. Keep settings reconciliation
+  serialized, and treat persisted settings as the source of truth for
+  controls. This is a stale-result race, not an MCP server-specific
+  toggle behavior.
+- **Async state race references** — The relevant implementation is
+  `src/core/mcp/mcpManager.ts` (`handleSettingsUpdate`,
+  `applySettingsUpdate`, and `updateServers`) together with
+  `src/components/settings/sections/McpSection.tsx`. When changing this
+  flow, test rapid enabled/disabled updates and delayed connection
+  completion, and prefer latest-update-wins behavior.
 
 - **"Etc" section renamed to "Miscellaneous"** — the settings section
   header at the bottom of the settings tab was labeled "Etc". Renamed
