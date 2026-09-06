@@ -8,8 +8,10 @@ import SmartComposerPlugin from '../../../main'
 import {
   McpServerParameters,
   mcpServerParametersSchema,
+  McpTransportType,
 } from '../../../types/mcp.types'
 import { ObsidianButton } from '../../common/ObsidianButton'
+import { ObsidianDropdown } from '../../common/ObsidianDropdown'
 import { ObsidianSetting } from '../../common/ObsidianSetting'
 import { ObsidianTextInput } from '../../common/ObsidianTextInput'
 import { ReactModal } from '../../common/ReactModal'
@@ -18,6 +20,54 @@ type McpServerFormComponentProps = {
   plugin: SmartComposerPlugin
   onClose: () => void
   serverId?: string
+}
+
+const TRANSPORT_OPTIONS: Record<string, string> = {
+  stdio: 'stdio',
+  http: 'http',
+  sse: 'sse',
+}
+
+const ENV_PLACEHOLDER = JSON.stringify(
+  {
+    GITHUB_PERSONAL_ACCESS_TOKEN: '<YOUR_TOKEN>',
+  },
+  null,
+  2,
+)
+
+const HEADERS_PLACEHOLDER = JSON.stringify(
+  {
+    Authorization: 'Bearer <YOUR_TOKEN>',
+  },
+  null,
+  2,
+)
+
+function parseArgsString(argsString: string): string[] {
+  return argsString
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+}
+
+function argsToString(args: string[] | undefined): string {
+  return (args ?? []).join('\n')
+}
+
+function jsonStringifyOrEmpty(value: unknown): string {
+  if (!value || (typeof value === 'object' && Object.keys(value).length === 0)) {
+    return ''
+  }
+  return JSON.stringify(value, null, 2)
+}
+
+function parseJsonOrUndefined(text: string): Record<string, string> | undefined {
+  const trimmed = text.trim()
+  if (trimmed.length === 0) {
+    return undefined
+  }
+  return JSON.parse(trimmed) as Record<string, string>
 }
 
 export class AddMcpServerModal extends ReactModal<McpServerFormComponentProps> {
@@ -55,23 +105,97 @@ function McpServerFormComponent({
     ? plugin.settings.mcp.servers.find((server) => server.id === serverId)
     : undefined
 
+  const existingParams = existingServer?.parameters
+  const initialType: McpTransportType =
+    existingParams && 'type' in existingParams
+      ? existingParams.type
+      : 'stdio'
+
   const [name, setName] = useState(existingServer?.id ?? '')
-  const [parameters, setParameters] = useState(
-    existingServer ? JSON.stringify(existingServer.parameters, null, 2) : '',
+  const [transportType, setTransportType] =
+    useState<McpTransportType>(initialType)
+
+  const [command, setCommand] = useState(
+    existingParams && 'command' in existingParams
+      ? existingParams.command
+      : '',
   )
+  const [args, setArgs] = useState(
+    existingParams && 'args' in existingParams
+      ? argsToString(existingParams.args)
+      : '',
+  )
+  const [env, setEnv] = useState(
+    existingParams && 'env' in existingParams
+      ? jsonStringifyOrEmpty(existingParams.env)
+      : '',
+  )
+
+  const [url, setUrl] = useState(
+    existingParams && 'url' in existingParams ? existingParams.url : '',
+  )
+  const [headers, setHeaders] = useState(
+    existingParams && 'headers' in existingParams
+      ? jsonStringifyOrEmpty(existingParams.headers)
+      : '',
+  )
+
   const [validationError, setValidationError] = useState<string | null>(null)
 
-  const PARAMETERS_PLACEHOLDER = JSON.stringify(
-    {
-      command: 'npx',
-      args: ['-y', '@modelcontextprotocol/server-github'],
-      env: {
-        GITHUB_PERSONAL_ACCESS_TOKEN: '<YOUR_TOKEN>',
-      },
-    },
-    null,
-    2,
-  )
+  const buildParameters = useCallback((): unknown => {
+    if (transportType === 'stdio') {
+      const params: Record<string, unknown> = {
+        type: 'stdio',
+        command: command.trim(),
+      }
+      const parsedArgs = parseArgsString(args)
+      if (parsedArgs.length > 0) {
+        params.args = parsedArgs
+      }
+      const parsedEnv = parseJsonOrUndefined(env)
+      if (parsedEnv) {
+        params.env = parsedEnv
+      }
+      return params
+    }
+    const params: Record<string, unknown> = {
+      type: transportType,
+      url: url.trim(),
+    }
+    const parsedHeaders = parseJsonOrUndefined(headers)
+    if (parsedHeaders) {
+      params.headers = parsedHeaders
+    }
+    return params
+  }, [transportType, command, args, env, url, headers])
+
+  const validateParameters = useCallback(() => {
+    try {
+      const built = buildParameters()
+      mcpServerParametersSchema.parse(built)
+      setValidationError(null)
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const formattedErrors = error.errors
+          .map((err) => {
+            const path = err.path.length > 0 ? `${err.path.join('.')}: ` : ''
+            return `${path}${err.message}`
+          })
+          .join('\n')
+        setValidationError(formattedErrors)
+      } else if (error instanceof SyntaxError) {
+        setValidationError('Env or headers must be valid JSON')
+      } else {
+        setValidationError(
+          error instanceof Error ? error.message : 'Invalid parameters',
+        )
+      }
+    }
+  }, [buildParameters])
+
+  useEffect(() => {
+    validateParameters()
+  }, [validateParameters])
 
   const handleSubmit = async () => {
     try {
@@ -90,18 +214,23 @@ function McpServerFormComponent({
         throw new Error('Server with same name already exists')
       }
 
-      if (parameters.trim().length === 0) {
-        throw new Error('Parameters are required')
-      }
-      let parsedParameters: unknown
+      let validatedParameters: McpServerParameters
       try {
-        parsedParameters = JSON.parse(parameters)
-      } catch {
-        throw new Error('Parameters must be valid JSON')
+        const built = buildParameters()
+        validatedParameters = mcpServerParametersSchema.parse(built)
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          throw new Error(
+            error.errors
+              .map((err) => `${err.path.join('.')}: ${err.message}`)
+              .join('\n'),
+          )
+        }
+        if (error instanceof SyntaxError) {
+          throw new Error('Env or headers must be valid JSON')
+        }
+        throw error
       }
-      const validatedParameters: McpServerParameters = mcpServerParametersSchema
-        .strict()
-        .parse(parsedParameters)
 
       const newSettings = {
         ...plugin.settings,
@@ -142,40 +271,6 @@ function McpServerFormComponent({
     }
   }
 
-  const validateParameters = useCallback((parameters: string) => {
-    try {
-      if (parameters.length === 0) {
-        setValidationError('Parameters are required')
-        return
-      }
-      const parsedParameters = JSON.parse(parameters)
-      mcpServerParametersSchema.strict().parse(parsedParameters)
-      setValidationError(null)
-    } catch (error) {
-      if (error instanceof SyntaxError) {
-        // JSON parse error
-        setValidationError('Invalid JSON format')
-      } else if (error instanceof z.ZodError) {
-        // Zod error
-        const formattedErrors = error.errors
-          .map((err) => {
-            const path = err.path.length > 0 ? `${err.path.join('.')}: ` : ''
-            return `${path}${err.message}`
-          })
-          .join('\n')
-        setValidationError(formattedErrors)
-      } else {
-        setValidationError(
-          error instanceof Error ? error.message : 'Invalid parameters',
-        )
-      }
-    }
-  }, [])
-
-  useEffect(() => {
-    validateParameters(parameters)
-  }, [parameters, validateParameters])
-
   return (
     <>
       <ObsidianSetting name="Name" desc="The name of the MCP server" required>
@@ -187,22 +282,93 @@ function McpServerFormComponent({
       </ObsidianSetting>
 
       <ObsidianSetting
-        name="Parameters"
-        desc={`JSON configuration that defines how to run the MCP server. Format must include:
-- "command": The executable name (e.g., "npx", "node")
-- "args": (Optional) Array of command-line arguments
-- "env": (Optional) Key-value pairs of environment variables`}
-        className="smtcmp-settings-textarea-header smtcmp-settings-description-preserve-whitespace"
+        name="Transport"
+        desc="How to connect to the MCP server"
         required
-      />
-      <TextareaAutosize
-        value={parameters}
-        placeholder={PARAMETERS_PLACEHOLDER}
-        onChange={(e) => setParameters(e.target.value)}
-        className="smtcmp-mcp-server-modal-textarea"
-        maxRows={20}
-        minRows={PARAMETERS_PLACEHOLDER.split('\n').length}
-      />
+      >
+        <ObsidianDropdown
+          value={transportType}
+          options={TRANSPORT_OPTIONS}
+          onChange={(value: string) =>
+            setTransportType(value as McpTransportType)
+          }
+        />
+      </ObsidianSetting>
+
+      {transportType === 'stdio' && (
+        <>
+          <ObsidianSetting
+            name="Command"
+            desc="The executable name to run (e.g. 'npx', 'node')"
+            required
+          >
+            <ObsidianTextInput
+              value={command}
+              onChange={(value: string) => setCommand(value)}
+              placeholder="npx"
+            />
+          </ObsidianSetting>
+          <ObsidianSetting
+            name="Args"
+            desc="One argument per line"
+            className="smtcmp-settings-textarea-header smtcmp-settings-description-preserve-whitespace"
+          >
+            <TextareaAutosize
+              value={args}
+              placeholder={'-y\n@modelcontextprotocol/server-github'}
+              onChange={(e) => setArgs(e.target.value)}
+              className="smtcmp-mcp-server-modal-textarea"
+              maxRows={10}
+              minRows={2}
+            />
+          </ObsidianSetting>
+          <ObsidianSetting
+            name="Env"
+            desc="Optional environment variables as a JSON object"
+            className="smtcmp-settings-textarea-header smtcmp-settings-description-preserve-whitespace"
+          >
+            <TextareaAutosize
+              value={env}
+              placeholder={ENV_PLACEHOLDER}
+              onChange={(e) => setEnv(e.target.value)}
+              className="smtcmp-mcp-server-modal-textarea"
+              maxRows={20}
+              minRows={ENV_PLACEHOLDER.split('\n').length}
+            />
+          </ObsidianSetting>
+        </>
+      )}
+
+      {(transportType === 'http' || transportType === 'sse') && (
+        <>
+          <ObsidianSetting
+            name="URL"
+            desc={`The ${transportType.toUpperCase()} endpoint URL of the MCP server`}
+            required
+          >
+            <ObsidianTextInput
+              value={url}
+              onChange={(value: string) => setUrl(value)}
+              placeholder="https://example.com/mcp"
+            />
+          </ObsidianSetting>
+          <ObsidianSetting
+            name="Headers"
+            desc="Optional request headers as a JSON object"
+            className="smtcmp-settings-textarea-header smtcmp-settings-description-preserve-whitespace"
+          >
+            <TextareaAutosize
+              value={headers}
+              placeholder={HEADERS_PLACEHOLDER}
+              onChange={(e) => setHeaders(e.target.value)}
+              className="smtcmp-mcp-server-modal-textarea"
+              maxRows={20}
+              minRows={HEADERS_PLACEHOLDER.split('\n').length}
+            />
+          </ObsidianSetting>
+        </>
+      )}
+
       {validationError !== null ? (
         <div className="smtcmp-mcp-server-modal-validation smtcmp-mcp-server-modal-validation--error">
           {validationError}

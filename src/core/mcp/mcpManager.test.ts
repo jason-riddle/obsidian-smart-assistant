@@ -4,6 +4,10 @@ import { join } from "path"
 import { Client } from "@modelcontextprotocol/client"
 import { StdioClientTransport } from "@modelcontextprotocol/client/stdio"
 
+import {
+  mcpServerParametersSchema,
+} from "../../types/mcp.types"
+
 const packageJson = JSON.parse(
   readFileSync(join(__dirname, "..", "..", "..", "package.json"), "utf-8"),
 ) as {
@@ -63,6 +67,91 @@ describe("MCP SDK v2 import migration", () => {
       expect(packages).toHaveProperty(
         "node_modules/@modelcontextprotocol/client",
       )
+    })
+  })
+})
+
+describe("MCP transport config schema", () => {
+  describe("positive: valid params validate correctly", () => {
+    it("should validate stdio params with type 'stdio'", () => {
+      const params = {
+        type: "stdio",
+        command: "npx",
+        args: ["-y", "@modelcontextprotocol/server-github"],
+        env: { GITHUB_PERSONAL_ACCESS_TOKEN: "tok" },
+      }
+      const result = mcpServerParametersSchema.parse(params)
+      expect(result.type).toBe("stdio")
+    })
+
+    it("should validate http params with type 'http' and a valid URL", () => {
+      const params = {
+        type: "http",
+        url: "https://example.com/mcp",
+      }
+      const result = mcpServerParametersSchema.parse(params)
+      expect(result.type).toBe("http")
+    })
+
+    it("should validate sse params with type 'sse' and a valid URL", () => {
+      const params = {
+        type: "sse",
+        url: "https://example.com/sse",
+      }
+      const result = mcpServerParametersSchema.parse(params)
+      expect(result.type).toBe("sse")
+    })
+
+    it("should validate http params with headers", () => {
+      const params = {
+        type: "http",
+        url: "https://example.com/mcp",
+        headers: { Authorization: "Bearer token" },
+      }
+      const result = mcpServerParametersSchema.parse(params)
+      expect(result.type).toBe("http")
+    })
+
+    it("should validate sse params with headers", () => {
+      const params = {
+        type: "sse",
+        url: "https://example.com/sse",
+        headers: { Authorization: "Bearer token" },
+      }
+      const result = mcpServerParametersSchema.parse(params)
+      expect(result.type).toBe("sse")
+    })
+  })
+
+  describe("negative: invalid params fail validation", () => {
+    it("should fail validation for http params with an invalid URL", () => {
+      const params = {
+        type: "http",
+        url: "not-a-url",
+      }
+      expect(() => mcpServerParametersSchema.parse(params)).toThrow()
+    })
+
+    it("should fail validation for params without a type field", () => {
+      const params = {
+        command: "npx",
+        args: ["-y", "server"],
+      }
+      expect(() => mcpServerParametersSchema.parse(params)).toThrow()
+    })
+
+    it("should fail validation for stdio params without a command", () => {
+      const params = {
+        type: "stdio",
+      }
+      expect(() => mcpServerParametersSchema.parse(params)).toThrow()
+    })
+
+    it("should fail validation for http params without a url", () => {
+      const params = {
+        type: "http",
+      }
+      expect(() => mcpServerParametersSchema.parse(params)).toThrow()
     })
   })
 })

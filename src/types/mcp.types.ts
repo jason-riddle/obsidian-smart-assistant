@@ -5,12 +5,37 @@ export type McpTool = Tool
 export type McpToolCallResult = CallToolResult
 export type McpClient = Client
 
-export const mcpServerParametersSchema = z.object({
+export type McpTransportType = 'stdio' | 'http' | 'sse'
+
+export const mcpStdioParamsSchema = z.object({
+  type: z.literal('stdio'),
   command: z.string(),
   args: z.array(z.string()).optional(),
   env: z.record(z.string(), z.string()).optional(),
 })
+
+export const mcpHttpParamsSchema = z.object({
+  type: z.literal('http'),
+  url: z.string().url(),
+  headers: z.record(z.string(), z.string()).optional(),
+})
+
+export const mcpSseParamsSchema = z.object({
+  type: z.literal('sse'),
+  url: z.string().url(),
+  headers: z.record(z.string(), z.string()).optional(),
+})
+
+export const mcpServerParametersSchema = z.discriminatedUnion('type', [
+  mcpStdioParamsSchema,
+  mcpHttpParamsSchema,
+  mcpSseParamsSchema,
+])
 export type McpServerParameters = z.infer<typeof mcpServerParametersSchema>
+
+export type McpStdioParameters = z.infer<typeof mcpStdioParamsSchema>
+export type McpHttpParameters = z.infer<typeof mcpHttpParamsSchema>
+export type McpSseParameters = z.infer<typeof mcpSseParamsSchema>
 
 export const mcpServerToolOptionsSchema = z.record(
   z.string(),

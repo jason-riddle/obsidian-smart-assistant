@@ -3,9 +3,14 @@ import { Platform } from 'obsidian'
 
 import { SmartComposerSettings } from '../../settings/schema/setting.types'
 import {
+  McpClient,
+  McpHttpParameters,
   McpServerConfig,
+  McpServerParameters,
   McpServerState,
   McpServerStatus,
+  McpSseParameters,
+  McpStdioParameters,
   McpTool,
 } from '../../types/mcp.types'
 import {
@@ -203,32 +208,17 @@ export class McpManager {
       }
     }
 
-    const { Client } = await import('@modelcontextprotocol/client')
-    const { StdioClientTransport } = await import(
-      '@modelcontextprotocol/client/stdio'
-    )
-    const client = new Client({ name, version: '1.0.0' })
+    const clientResult = await this.createClientForTransport(name, serverParams)
 
-    try {
-      await client.connect(
-        new StdioClientTransport({
-          ...serverParams,
-          env: {
-            ...this.defaultEnv,
-            ...(serverParams.env ?? {}),
-          },
-        }),
-      )
-    } catch (error) {
+    if (clientResult instanceof Error) {
       return {
         name,
         config: serverConfig,
         status: McpServerStatus.Error,
-        error: new Error(
-          `Failed to connect to MCP server ${name}: ${error instanceof Error ? error.message : String(error)}`,
-        ),
+        error: clientResult,
       }
     }
+    const client = clientResult
 
     try {
       const toolList = await client.listTools()
@@ -240,6 +230,7 @@ export class McpManager {
         tools: toolList.tools,
       }
     } catch (error) {
+      await client.close().catch(() => {})
       return {
         name,
         config: serverConfig,
@@ -248,6 +239,108 @@ export class McpManager {
           `Failed to list tools for MCP server ${name}: ${error instanceof Error ? error.message : String(error)}`,
         ),
       }
+    }
+  }
+
+  private async createClientForTransport(
+    name: string,
+    serverParams: McpServerParameters,
+  ): Promise<McpClient | Error> {
+    if (serverParams.type === 'stdio') {
+      return this.createStdioClient(name, serverParams)
+    }
+    if (serverParams.type === 'http') {
+      return this.createHttpClient(name, serverParams)
+    }
+    return this.createSseClient(name, serverParams)
+  }
+
+  private async createStdioClient(
+    name: string,
+    serverParams: McpStdioParameters,
+  ): Promise<McpClient | Error> {
+    const { Client } = await import('@modelcontextprotocol/client')
+    const { StdioClientTransport } = await import(
+      '@modelcontextprotocol/client/stdio'
+    )
+    const client = new Client({ name, version: '1.0.0' })
+    try {
+      await client.connect(
+        new StdioClientTransport({
+          command: serverParams.command,
+          args: serverParams.args,
+          env: {
+            ...this.defaultEnv,
+            ...(serverParams.env ?? {}),
+          },
+        }),
+      )
+      return client
+    } catch (error) {
+      await client.close().catch(() => {})
+      return new Error(
+        `Failed to connect to MCP server ${name}: ${error instanceof Error ? error.message : String(error)}`,
+      )
+    }
+  }
+
+  private async createHttpClient(
+    name: string,
+    serverParams: McpHttpParameters,
+  ): Promise<McpClient | Error> {
+    const { Client, StreamableHTTPClientTransport, SSEClientTransport } =
+      await import('@modelcontextprotocol/client')
+    const headers = serverParams.headers ?? {}
+    const url = new URL(serverParams.url)
+
+    const client = new Client({ name, version: '1.0.0' })
+    try {
+      await client.connect(
+        new StreamableHTTPClientTransport(url, {
+          requestInit: { headers },
+        }),
+      )
+      return client
+    } catch (error) {
+      await client.close().catch(() => {})
+      // Fall back to SSE transport for servers that don't support Streamable HTTP
+      const fallbackClient = new Client({ name, version: '1.0.0' })
+      try {
+        await fallbackClient.connect(
+          new SSEClientTransport(url, {
+            requestInit: { headers },
+          }),
+        )
+        return fallbackClient
+      } catch (fallbackError) {
+        await fallbackClient.close().catch(() => {})
+        return new Error(
+          `Failed to connect to MCP server ${name}: ${error instanceof Error ? error.message : String(error)}; SSE fallback failed: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`,
+        )
+      }
+    }
+  }
+
+  private async createSseClient(
+    name: string,
+    serverParams: McpSseParameters,
+  ): Promise<McpClient | Error> {
+    const { Client, SSEClientTransport } = await import(
+      '@modelcontextprotocol/client'
+    )
+    const client = new Client({ name, version: '1.0.0' })
+    try {
+      await client.connect(
+        new SSEClientTransport(new URL(serverParams.url), {
+          requestInit: { headers: serverParams.headers ?? {} },
+        }),
+      )
+      return client
+    } catch (error) {
+      await client.close().catch(() => {})
+      return new Error(
+        `Failed to connect to MCP server ${name}: ${error instanceof Error ? error.message : String(error)}`,
+      )
     }
   }
 

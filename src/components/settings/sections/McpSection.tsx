@@ -15,6 +15,7 @@ import { useSettings } from '../../../contexts/settings-context'
 import { McpManager } from '../../../core/mcp/mcpManager'
 import SmartComposerPlugin from '../../../main'
 import {
+  McpServerParameters,
   McpServerState,
   McpServerStatus,
   McpTool,
@@ -30,6 +31,13 @@ import {
 type McpSectionProps = {
   app: App
   plugin: SmartComposerPlugin
+}
+
+function getTransportSummary(parameters: McpServerParameters): string {
+  if (parameters.type === 'stdio') {
+    return `stdio: ${parameters.command}`
+  }
+  return `${parameters.type}: ${parameters.url}`
 }
 
 export function McpSection({ app, plugin }: McpSectionProps) {
@@ -164,7 +172,12 @@ function McpServerComponent({
   return (
     <div className="smtcmp-mcp-server">
       <div className="smtcmp-mcp-server-row">
-        <div className="smtcmp-mcp-server-name">{server.name}</div>
+        <div className="smtcmp-mcp-server-name">
+          <span>{server.name}</span>
+          <span className="smtcmp-mcp-server-transport">
+            {getTransportSummary(server.config.parameters)}
+          </span>
+        </div>
         <div className="smtcmp-mcp-server-status">
           <McpServerStatusBadge status={server.status} />
         </div>

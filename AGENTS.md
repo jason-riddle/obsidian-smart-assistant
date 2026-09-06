@@ -32,9 +32,14 @@ npm run test         # jest
 
 - **`src/core/mcp/`** — MCP server management.
   - `mcpManager.ts` — Client lifecycle, connection management, tool
-    dispatch. Currently supports **stdio transport only**. Uses
+    dispatch. Supports **three transports**: stdio (default), http
+    (Streamable HTTP), and sse (Server-Sent Events). Uses
     `@modelcontextprotocol/client` (v2 SDK) with dynamic imports for
-    `Client` and `StdioClientTransport`.
+    `Client`, `StreamableHTTPClientTransport`, `SSEClientTransport`
+    (from the main entry) and `StdioClientTransport`
+    (from `@modelcontextprotocol/client/stdio`). The http transport
+    attempts `StreamableHTTPClientTransport` first and falls back to
+    `SSEClientTransport` on connection failure (e.g. 4xx/404/405).
   - `tool-name-utils.ts` — Tool name parsing/validation (serverName__toolName).
   - `exception.ts` — MCP-specific exceptions.
 
@@ -51,7 +56,7 @@ npm run test         # jest
   settings (`smartComposerSettingsSchema`).
 - **`src/settings/schema/settings.ts`** — Settings parsing and validation.
 - **`src/settings/schema/migrations/`** — Versioned migration chain.
-  - `index.ts` — Exports `SETTINGS_SCHEMA_VERSION` (currently 16) and the
+  - `index.ts` — Exports `SETTINGS_SCHEMA_VERSION` (currently 17) and the
     `SETTING_MIGRATIONS` array.
   - Each file `N_to_(N+1).ts` contains a single migration function.
 - **`src/settings/SettingTab.tsx`** — Obsidian settings UI (React).
@@ -88,38 +93,46 @@ npm run test         # jest
 
 ## MCP System
 
-The MCP integration uses `@modelcontextprotocol/client` (v2 SDK).
+The MCP integration uses `@modelcontextprotocol/client` (v2 SDK). Three
+transport types are supported: **stdio** (default), **http**
+(Streamable HTTP, with automatic fallback to SSE), and **sse**
+(Server-Sent Events).
 
 - **Import paths:**
   - `Client`, `Tool`, `CallToolResult`, `StreamableHTTPClientTransport`,
     `SSEClientTransport`, auth helpers → `@modelcontextprotocol/client`
   - `StdioClientTransport` → `@modelcontextprotocol/client/stdio`
 - **Config types:** `src/types/mcp.types.ts` — Zod schemas for
-  `McpServerConfig`, `McpServerParameters`, `McpServerToolOptions`.
+  `McpServerConfig`, `McpServerParameters` (a discriminated union on
+  `type` over `mcpStdioParamsSchema`, `mcpHttpParamsSchema`,
+  `mcpSseParamsSchema`), and `McpServerToolOptions`.
 - **Manager:** `src/core/mcp/mcpManager.ts` — Handles server lifecycle
   (connect/disconnect), tool listing, tool execution with abort support,
-  and per-conversation tool permission management.
+  and per-conversation tool permission management. `connectServer`
+  branches on `serverParams.type` to select the transport; the http
+  branch falls back from `StreamableHTTPClientTransport` to
+  `SSEClientTransport` on connection failure.
 - **Tool dispatch:** `src/utils/chat/responseGenerator.ts` — Calls
   `McpManager.callTool()` during LLM response streaming.
 
-### Adding a new MCP transport (Phase 1)
+### Adding a new MCP transport
 
-Currently only stdio transport is supported. To add a new transport (e.g.,
-StreamableHTTP or SSE):
+Three transports are already supported (stdio, http, sse). To add a new
+transport:
 
-1. Add transport config fields to the Zod schema in
-   `src/types/mcp.types.ts` (e.g., `mcpServerParametersSchema` or a new
-   schema variant).
-2. Update `McpManager.connectServer()` in `src/core/mcp/mcpManager.ts`
-   to select the appropriate transport based on config.
-3. Import the transport from `@modelcontextprotocol/client` (for
-   `StreamableHTTPClientTransport` / `SSEClientTransport`).
+1. Add transport config fields to a new Zod schema in
+   `src/types/mcp.types.ts` and append it to the `mcpServerParametersSchema`
+   discriminated union.
+2. Add a `createXxxClient` branch in `McpManager.connectServer()` /
+   `createClientForTransport()` in `src/core/mcp/mcpManager.ts`.
+3. Import the transport from `@modelcontextprotocol/client` (or the
+   appropriate subpath).
 4. Add a settings migration if the config schema changed (see below).
 
 ## Settings System
 
 Settings are defined with Zod schemas and migrated through a versioned
-chain. The current schema version is `SETTINGS_SCHEMA_VERSION` (16).
+chain. The current schema version is `SETTINGS_SCHEMA_VERSION` (17).
 
 ### Adding a new settings migration
 
