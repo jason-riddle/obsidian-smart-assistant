@@ -1,6 +1,7 @@
 import { App, TFile, htmlToMarkdown, requestUrl } from 'obsidian'
 
 import { editorStateToPlainText } from '../../components/chat-view/chat-input/utils/editor-state-to-plain-text'
+import { Skill } from '../../core/skills/types'
 import { SmartComposerSettings } from '../../settings/schema/setting.types'
 import {
   ChatAssistantMessage,
@@ -29,11 +30,13 @@ import { YoutubeTranscript, isYoutubeUrl } from './youtube-transcript'
 export class PromptGenerator {
   private app: App
   private settings: SmartComposerSettings
+  private skills: Skill[]
   private MAX_CONTEXT_MESSAGES = 20
 
-  constructor(app: App, settings: SmartComposerSettings) {
+  constructor(app: App, settings: SmartComposerSettings, skills: Skill[] = []) {
     this.app = app
     this.settings = settings
+    this.skills = skills
   }
 
   public async generateRequestMessages({
@@ -358,8 +361,24 @@ The user has full access to the file, so they prefer seeing only the changes in 
 
     return {
       role: 'system',
-      content: systemPrompt,
+      content: this.appendSkillsToPrompt(systemPrompt),
     }
+  }
+
+  private appendSkillsToPrompt(basePrompt: string): string {
+    if (this.skills.length === 0) {
+      return basePrompt
+    }
+    const skillsSection = this.skills
+      .map((skill) => `- ${skill.name}: ${skill.description}`)
+      .join('\n')
+    return `${basePrompt}
+
+## Available Skills
+
+${skillsSection}
+
+Use the \`read_skill\` tool with a skill's name to load its full instructions when you need them.`
   }
 
   private getCustomInstructionMessage(): RequestMessage | null {

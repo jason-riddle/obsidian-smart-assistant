@@ -17,6 +17,7 @@ import { APPLY_VIEW_TYPE } from '../../constants'
 import { useApp } from '../../contexts/app-context'
 import { useMcp } from '../../contexts/mcp-context'
 import { useSettings } from '../../contexts/settings-context'
+import { useSkills } from '../../contexts/skills-context'
 import {
   LLMAPIKeyInvalidException,
   LLMAPIKeyNotSetException,
@@ -45,7 +46,7 @@ import { groupAssistantAndToolMessages } from '../../utils/chat/message-groups'
 import { PromptGenerator } from '../../utils/chat/promptGenerator'
 import { readTFileContent } from '../../utils/obsidian'
 import { ErrorModal } from '../modals/ErrorModal'
-import { TemplateSectionModal } from '../modals/TemplateSectionModal'
+import { SkillsSectionModal } from '../modals/SkillsSectionModal'
 
 import AssistantToolMessageGroupItem from './AssistantToolMessageGroupItem'
 import ChatUserInput, { ChatUserInputRef } from './chat-input/ChatUserInput'
@@ -85,6 +86,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
   const app = useApp()
   const { settings, setSettings } = useSettings()
   const { getMcpManager } = useMcp()
+  const { skills } = useSkills()
 
   const {
     createOrUpdateConversation,
@@ -94,8 +96,8 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
     chatList,
   } = useChatHistory()
   const promptGenerator = useMemo(() => {
-    return new PromptGenerator(app, settings)
-  }, [app, settings])
+    return new PromptGenerator(app, settings, skills)
+  }, [app, settings, skills])
 
   const [inputMessage, setInputMessage] = useState<ChatUserMessage>(() => {
     const newMessage = getNewInputMessage(app)
@@ -577,10 +579,10 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
           </ChatListDropdown>
           <button
             onClick={() => {
-              new TemplateSectionModal(app).open()
+              new SkillsSectionModal(app).open()
             }}
             className="clickable-icon"
-            aria-label="Prompt Templates"
+            aria-label="Skills"
           >
             <Book size={18} />
           </button>

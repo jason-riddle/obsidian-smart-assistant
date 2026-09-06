@@ -258,11 +258,6 @@ const ChatUserInput = forwardRef<ChatUserInputRef, ChatUserInputProps>(
           onMentionNodeMutation={handleMentionNodeMutation}
           onCreateImageMentionables={handleCreateImageMentionables}
           autoFocus={autoFocus}
-          plugins={{
-            templatePopover: {
-              anchorElement: containerRef.current,
-            },
-          }}
         />
 
         <div className="smtcmp-chat-user-input-controls">

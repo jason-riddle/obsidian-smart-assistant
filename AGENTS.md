@@ -63,8 +63,8 @@ npm run test         # jest
 
 ### Database
 
-- **`src/database/json/`** — JSON-based storage for chat history and
-  templates. File context is provided via explicit @-mentions only.
+- **`src/database/json/`** — JSON-based storage for chat history. File
+  context is provided via explicit @-mentions only.
 
 ### UI components
 
@@ -234,6 +234,88 @@ chain. The current schema version is `SETTINGS_SCHEMA_VERSION` (17).
 4. Bump `SETTINGS_SCHEMA_VERSION` in the same file.
 5. Update the Zod schema in `src/settings/schema/setting.types.ts` if
    new fields are added.
+
+## Skills System
+
+Skills replace the former Prompt Templates. A skill is a reusable set
+of AI instructions discovered from markdown files using the
+agentskills.io SKILL.md format. Skills use **progressive disclosure**:
+the system prompt lists each skill's name and description (level 1), and
+the `read_skill` built-in tool lets the agent load a skill's full
+instructions on demand (level 2).
+
+### Skill discovery
+
+`src/core/skills/skillManager.ts` (`SkillManager`) discovers skills
+from two sources:
+
+1. **Vault skills** — `<vault>/.agents/skills/<name>/SKILL.md`. Scanned
+   via `app.vault.adapter`. The manager watches `create`/`modify`/
+   `delete` vault events (debounced 500ms) for paths under
+   `.agents/skills/` and reloads automatically.
+2. **Bundled skills** — hardcoded in
+   `src/core/skills/bundledSkills.ts`. Ship with the plugin, no
+   filesystem access needed.
+
+Vault skills **override** bundled skills with the same `name`.
+
+### SKILL.md format
+
+```
+<skill-name>/
+├── SKILL.md          # Required: metadata + instructions
+├── scripts/          # Optional
+├── references/       # Optional
+└── assets/           # Optional
+```
+
+**Frontmatter** (parsed with a simple key-value parser, no YAML
+dependency):
+
+- `name` (required): max 64 chars, lowercase `[a-z0-9-]` only, **must
+  match the parent directory name**.
+- `description` (required): max 1024 chars — describe what the skill
+  does AND when to use it.
+- `license` (optional)
+- `compatibility` (optional): max 500 chars
+- `metadata` (optional): string→string map
+- `allowed-tools` (optional): space-separated pre-approved tools
+
+**Body:** Markdown after the `---` closing delimiter — instructions for
+the AI agent.
+
+### Adding a new bundled skill
+
+1. Add an entry to `BUNDLED_SKILLS` in
+   `src/core/skills/bundledSkills.ts` with `name`, `description`,
+   `frontmatter`, `body`, `source: "bundled"`, and `path`/`dir`.
+
+### Adding a new vault skill
+
+Create `<vault>/.agents/skills/<skill-name>/SKILL.md` with valid
+frontmatter and a markdown body. The manager picks it up automatically.
+
+### The `read_skill` tool
+
+`src/core/skills/skillTool.ts` defines a built-in tool `read_skill`
+(not an MCP tool). It takes `{ name: string }` and returns the skill's
+body text. The `ResponseGenerator` (`src/utils/chat/responseGenerator.ts`)
+registers it alongside MCP tools and dispatches it inline
+(`executeBuiltinTool`) — built-in tools skip the MCP approval flow and
+always run immediately.
+
+### Context and providers
+
+- **`src/contexts/skills-context.tsx`** — `SkillsProvider` creates a
+  `SkillManager`, loads skills, subscribes to changes, and exposes
+  `{ skills, refreshSkills, getSkillManager }` via `useSkills()`.
+- **`src/ChatView.tsx`** mounts `SkillsProvider` in the provider tree.
+- **`src/components/chat-view/Chat.tsx`** passes `skills` to the
+  `PromptGenerator` (for system prompt injection) and the stream
+  manager (for the `read_skill` tool).
+- **`src/components/settings/sections/SkillsSection.tsx`** — settings
+  UI listing discovered skills (read-only; no CRUD). Opened in a modal
+  from the chat toolbar and the settings tab.
 
 ## Code Conventions
 

@@ -5,6 +5,7 @@ import { useCallback, useMemo, useRef } from 'react'
 import { useApp } from '../../contexts/app-context'
 import { useMcp } from '../../contexts/mcp-context'
 import { useSettings } from '../../contexts/settings-context'
+import { useSkills } from '../../contexts/skills-context'
 import {
   LLMAPIKeyInvalidException,
   LLMAPIKeyNotSetException,
@@ -40,6 +41,7 @@ export function useChatStreamManager({
   const app = useApp()
   const { settings, setSettings } = useSettings()
   const { getMcpManager } = useMcp()
+  const { skills } = useSkills()
 
   const activeStreamAbortControllersRef = useRef<AbortController[]>([])
 
@@ -117,6 +119,7 @@ export function useChatStreamManager({
           maxAutoIterations: settings.chatOptions.maxAutoIterations,
           promptGenerator,
           mcpManager,
+          skills,
           abortSignal: abortController.signal,
         })
 

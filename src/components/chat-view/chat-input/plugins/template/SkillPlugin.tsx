@@ -1,33 +1,36 @@
-import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import clsx from 'clsx'
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext"
+import clsx from "clsx"
+import fuzzysort from "fuzzysort"
 import {
-  $parseSerializedNode,
+  $createTextNode,
   COMMAND_PRIORITY_NORMAL,
   TextNode,
-} from 'lexical'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { createPortal } from 'react-dom'
+} from "lexical"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { createPortal } from "react-dom"
 
-import { Template } from '../../../../../database/json/template/types'
-import { useTemplateManager } from '../../../../../hooks/useJsonManagers'
-import { MenuOption } from '../shared/LexicalMenu'
+import { useSkills } from "../../../../../contexts/skills-context"
+import { Skill } from "../../../../../core/skills/types"
+import { MenuOption } from "../shared/LexicalMenu"
 import {
   LexicalTypeaheadMenuPlugin,
   useBasicTypeaheadTriggerMatch,
-} from '../typeahead-menu/LexicalTypeaheadMenuPlugin'
+} from "../typeahead-menu/LexicalTypeaheadMenuPlugin"
 
-class TemplateTypeaheadOption extends MenuOption {
+class SkillTypeaheadOption extends MenuOption {
   name: string
-  template: Template
+  description: string
+  skill: Skill
 
-  constructor(name: string, template: Template) {
-    super(name)
-    this.name = name
-    this.template = template
+  constructor(skill: Skill) {
+    super(skill.name)
+    this.name = skill.name
+    this.description = skill.description
+    this.skill = skill
   }
 }
 
-function TemplateMenuItem({
+function SkillMenuItem({
   index,
   isSelected,
   onClick,
@@ -38,13 +41,13 @@ function TemplateMenuItem({
   isSelected: boolean
   onClick: () => void
   onMouseEnter: () => void
-  option: TemplateTypeaheadOption
+  option: SkillTypeaheadOption
 }) {
   return (
     <li
       key={option.key}
       tabIndex={-1}
-      className={clsx('item', isSelected && 'selected')}
+      className={clsx("item", isSelected && "selected")}
       ref={(el) => option.setRefElement(el)}
       role="option"
       aria-selected={isSelected}
@@ -54,50 +57,62 @@ function TemplateMenuItem({
     >
       <div className="smtcmp-template-menu-item">
         <div className="text">{option.name}</div>
+        <div
+          className="smtcmp-settings-desc"
+          style={{ fontSize: "12px", marginTop: "2px" }}
+        >
+          {option.description}
+        </div>
       </div>
     </li>
   )
 }
 
-export default function TemplatePlugin() {
+export default function SkillPlugin() {
   const [editor] = useLexicalComposerContext()
-  const templateManager = useTemplateManager()
+  const { skills } = useSkills()
 
   const [queryString, setQueryString] = useState<string | null>(null)
-  const [searchResults, setSearchResults] = useState<Template[]>([])
+  const [searchResults, setSearchResults] = useState<Skill[]>([])
 
   useEffect(() => {
     if (queryString == null) return
-    templateManager.searchTemplates(queryString).then(setSearchResults)
-  }, [queryString, templateManager])
+    if (skills.length === 0) {
+      setSearchResults([])
+      return
+    }
+    const results = fuzzysort
+      .go(queryString, skills, {
+        keys: ["name", "description"],
+        threshold: 0.2,
+        limit: 20,
+        all: true,
+      })
+      .map((result) => result.obj)
+    setSearchResults(results)
+  }, [queryString, skills])
 
   const options = useMemo(
-    () =>
-      searchResults.map(
-        (result) => new TemplateTypeaheadOption(result.name, result),
-      ),
+    () => searchResults.map((skill) => new SkillTypeaheadOption(skill)),
     [searchResults],
   )
 
-  const checkForTriggerMatch = useBasicTypeaheadTriggerMatch('/', {
+  const checkForTriggerMatch = useBasicTypeaheadTriggerMatch("/", {
     minLength: 0,
   })
 
   const onSelectOption = useCallback(
     (
-      selectedOption: TemplateTypeaheadOption,
+      selectedOption: SkillTypeaheadOption,
       nodeToRemove: TextNode | null,
       closeMenu: () => void,
     ) => {
       editor.update(() => {
-        const parsedNodes = selectedOption.template.content.nodes.map((node) =>
-          $parseSerializedNode(node),
-        )
+        const textNode = $createTextNode(selectedOption.skill.body)
         if (nodeToRemove) {
           const parent = nodeToRemove.getParentOrThrow()
-          parent.splice(nodeToRemove.getIndexWithinParent(), 1, parsedNodes)
-          const lastNode = parsedNodes[parsedNodes.length - 1]
-          lastNode.selectEnd()
+          parent.splice(nodeToRemove.getIndexWithinParent(), 1, [textNode])
+          textNode.selectEnd()
         }
         closeMenu()
       })
@@ -106,7 +121,7 @@ export default function TemplatePlugin() {
   )
 
   return (
-    <LexicalTypeaheadMenuPlugin<TemplateTypeaheadOption>
+    <LexicalTypeaheadMenuPlugin<SkillTypeaheadOption>
       onQueryChange={setQueryString}
       onSelectOption={onSelectOption}
       triggerFn={checkForTriggerMatch}
@@ -121,12 +136,12 @@ export default function TemplatePlugin() {
               <div
                 className="smtcmp-popover"
                 style={{
-                  position: 'fixed',
+                  position: "fixed",
                 }}
               >
                 <ul>
                   {options.map((option, i: number) => (
-                    <TemplateMenuItem
+                    <SkillMenuItem
                       index={i}
                       isSelected={selectedIndex === i}
                       onClick={() => {

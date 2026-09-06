@@ -13,6 +13,7 @@ import { LexicalEditor, SerializedEditorState } from 'lexical'
 import { RefObject, useCallback, useEffect } from 'react'
 
 import { useApp } from '../../../contexts/app-context'
+import { SkillsProvider } from '../../../contexts/skills-context'
 import { MentionableImage } from '../../../types/mentionable'
 import { fuzzySearch } from '../../../utils/fuzzy-search'
 
@@ -26,8 +27,7 @@ import OnEnterPlugin from './plugins/on-enter/OnEnterPlugin'
 import OnMutationPlugin, {
   NodeMutations,
 } from './plugins/on-mutation/OnMutationPlugin'
-import CreateTemplatePopoverPlugin from './plugins/template/CreateTemplatePopoverPlugin'
-import TemplatePlugin from './plugins/template/TemplatePlugin'
+import SkillPlugin from './plugins/template/SkillPlugin'
 
 export type LexicalContentEditableProps = {
   editorRef: RefObject<LexicalEditor>
@@ -39,11 +39,6 @@ export type LexicalContentEditableProps = {
   onCreateImageMentionables?: (mentionables: MentionableImage[]) => void
   initialEditorState?: InitialEditorStateType
   autoFocus?: boolean
-  plugins?: {
-    templatePopover?: {
-      anchorElement: HTMLElement | null
-    }
-  }
 }
 
 export default function LexicalContentEditable({
@@ -56,7 +51,6 @@ export default function LexicalContentEditable({
   onCreateImageMentionables,
   initialEditorState,
   autoFocus = false,
-  plugins,
 }: LexicalContentEditableProps) {
   const app = useApp()
 
@@ -137,14 +131,9 @@ export default function LexicalContentEditable({
       <AutoLinkMentionPlugin />
       <ImagePastePlugin onCreateImageMentionables={onCreateImageMentionables} />
       <DragDropPaste onCreateImageMentionables={onCreateImageMentionables} />
-      <TemplatePlugin />
-      {plugins?.templatePopover && (
-        <CreateTemplatePopoverPlugin
-          app={app}
-          anchorElement={plugins.templatePopover.anchorElement}
-          contentEditableElement={contentEditableRef.current}
-        />
-      )}
+      <SkillsProvider>
+        <SkillPlugin />
+      </SkillsProvider>
     </LexicalComposer>
   )
 }

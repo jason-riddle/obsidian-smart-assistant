@@ -1,5 +1,7 @@
 import { App } from 'obsidian'
 
+import { AppProvider } from '../../contexts/app-context'
+import { SkillsProvider } from '../../contexts/skills-context'
 import SmartComposerPlugin from '../../main'
 import { ObsidianButton } from '../common/ObsidianButton'
 import { ObsidianSetting } from '../common/ObsidianSetting'
@@ -10,7 +12,7 @@ import { McpSection } from './sections/McpSection'
 import { ModelsSection } from './sections/ModelsSection'
 import { PlanConnectionsSection } from './sections/PlanConnectionsSection'
 import { ProvidersSection } from './sections/ProvidersSection'
-import { TemplateSection } from './sections/TemplateSection'
+import { SkillsSection } from './sections/SkillsSection'
 
 type SettingsTabRootProps = {
   app: App
@@ -39,7 +41,11 @@ export function SettingsTabRoot({ app, plugin }: SettingsTabRootProps) {
       <ProvidersSection app={app} plugin={plugin} />
       <ModelsSection app={app} plugin={plugin} />
       <McpSection app={app} plugin={plugin} />
-      <TemplateSection app={app} />
+      <AppProvider app={app}>
+        <SkillsProvider>
+          <SkillsSection app={app} />
+        </SkillsProvider>
+      </AppProvider>
       <EtcSection app={app} plugin={plugin} />
     </>
   )
