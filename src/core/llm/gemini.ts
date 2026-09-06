@@ -543,33 +543,4 @@ export class GeminiProvider extends BaseLLMProvider<
     return config
   }
 
-  async getEmbedding(
-    model: string,
-    text: string,
-    options?: { dimensions?: number },
-  ): Promise<number[]> {
-    if (!this.apiKey) {
-      throw new LLMAPIKeyNotSetException(
-        `Provider ${this.provider.id} API key is missing. Please set it in settings menu.`,
-      )
-    }
-
-    try {
-      const response = await this.client.models.embedContent({
-        model: model,
-        contents: text,
-        ...(options?.dimensions && {
-          config: { outputDimensionality: options.dimensions },
-        }),
-      })
-      return response.embeddings?.[0]?.values ?? []
-    } catch (error) {
-      if (error.status === 429) {
-        throw new LLMRateLimitExceededException(
-          'Gemini API rate limit exceeded. Please try again later.',
-        )
-      }
-      throw error
-    }
-  }
 }

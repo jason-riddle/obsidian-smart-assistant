@@ -1,11 +1,8 @@
 import { ChatModel } from './types/chat-model.types'
-import { EmbeddingModel } from './types/embedding-model.types'
 import { LLMProvider, LLMProviderType } from './types/provider.types'
 
 export const CHAT_VIEW_TYPE = 'smtcmp-chat-view'
 export const APPLY_VIEW_TYPE = 'smtcmp-apply-view'
-
-export const PGLITE_DB_PATH = '.smtcmp_vector_db.tar.gz'
 
 export const CODEX_CLIENT_ID = 'app_EMoamEEZ73f0CkXaXp7hrann'
 export const CODEX_ISSUER = 'https://auth.openai.com'
@@ -60,9 +57,6 @@ export const DEFAULT_APPLY_MODEL_ID = 'gpt-4.1-mini'
 // Recommended model ids
 export const RECOMMENDED_MODELS_FOR_CHAT = ['claude-sonnet-4.5', 'gpt-5.2']
 export const RECOMMENDED_MODELS_FOR_APPLY = ['gpt-4.1-mini']
-export const RECOMMENDED_MODELS_FOR_EMBEDDING = [
-  'openai/text-embedding-3-small',
-]
 
 export const PLAN_PROVIDER_TYPES: readonly LLMProviderType[] = [
   'anthropic-plan',
@@ -75,7 +69,6 @@ export const PROVIDER_TYPES_INFO = {
     defaultProviderId: 'anthropic-plan',
     requireApiKey: false,
     requireBaseUrl: false,
-    supportEmbedding: false,
     additionalSettings: [],
   },
   'openai-plan': {
@@ -83,7 +76,6 @@ export const PROVIDER_TYPES_INFO = {
     defaultProviderId: 'openai-plan',
     requireApiKey: false,
     requireBaseUrl: false,
-    supportEmbedding: false,
     additionalSettings: [],
   },
   'gemini-plan': {
@@ -91,7 +83,6 @@ export const PROVIDER_TYPES_INFO = {
     defaultProviderId: 'gemini-plan',
     requireApiKey: false,
     requireBaseUrl: false,
-    supportEmbedding: false,
     additionalSettings: [],
   },
   anthropic: {
@@ -99,7 +90,6 @@ export const PROVIDER_TYPES_INFO = {
     defaultProviderId: 'anthropic',
     requireApiKey: true,
     requireBaseUrl: false,
-    supportEmbedding: false,
     additionalSettings: [],
   },
   openai: {
@@ -107,7 +97,6 @@ export const PROVIDER_TYPES_INFO = {
     defaultProviderId: 'openai',
     requireApiKey: true,
     requireBaseUrl: false,
-    supportEmbedding: true,
     additionalSettings: [],
   },
   gemini: {
@@ -115,7 +104,6 @@ export const PROVIDER_TYPES_INFO = {
     defaultProviderId: 'gemini',
     requireApiKey: true,
     requireBaseUrl: false,
-    supportEmbedding: true,
     additionalSettings: [],
   },
   xai: {
@@ -123,7 +111,6 @@ export const PROVIDER_TYPES_INFO = {
     defaultProviderId: 'xai',
     requireApiKey: true,
     requireBaseUrl: false,
-    supportEmbedding: false,
     additionalSettings: [],
   },
   deepseek: {
@@ -131,7 +118,6 @@ export const PROVIDER_TYPES_INFO = {
     defaultProviderId: 'deepseek',
     requireApiKey: true,
     requireBaseUrl: false,
-    supportEmbedding: false,
     additionalSettings: [],
   },
   mistral: {
@@ -139,7 +125,6 @@ export const PROVIDER_TYPES_INFO = {
     defaultProviderId: 'mistral',
     requireApiKey: true,
     requireBaseUrl: false,
-    supportEmbedding: false,
     additionalSettings: [],
   },
   perplexity: {
@@ -147,7 +132,6 @@ export const PROVIDER_TYPES_INFO = {
     defaultProviderId: 'perplexity',
     requireApiKey: true,
     requireBaseUrl: false,
-    supportEmbedding: false,
     additionalSettings: [],
   },
   openrouter: {
@@ -155,7 +139,6 @@ export const PROVIDER_TYPES_INFO = {
     defaultProviderId: 'openrouter',
     requireApiKey: true,
     requireBaseUrl: false,
-    supportEmbedding: false,
     additionalSettings: [],
   },
   ollama: {
@@ -163,7 +146,6 @@ export const PROVIDER_TYPES_INFO = {
     defaultProviderId: 'ollama',
     requireApiKey: false,
     requireBaseUrl: false,
-    supportEmbedding: true,
     additionalSettings: [],
   },
   'lm-studio': {
@@ -171,7 +153,6 @@ export const PROVIDER_TYPES_INFO = {
     defaultProviderId: 'lm-studio',
     requireApiKey: false,
     requireBaseUrl: false,
-    supportEmbedding: true,
     additionalSettings: [],
   },
   'azure-openai': {
@@ -179,7 +160,6 @@ export const PROVIDER_TYPES_INFO = {
     defaultProviderId: null, // no default provider for this type
     requireApiKey: true,
     requireBaseUrl: true,
-    supportEmbedding: false,
     additionalSettings: [
       {
         label: 'Deployment',
@@ -202,7 +182,6 @@ export const PROVIDER_TYPES_INFO = {
     defaultProviderId: null, // no default provider for this type
     requireApiKey: false,
     requireBaseUrl: true,
-    supportEmbedding: true,
     additionalSettings: [
       {
         label: 'No Stainless Headers',
@@ -221,7 +200,6 @@ export const PROVIDER_TYPES_INFO = {
     defaultProviderId: string | null
     requireApiKey: boolean
     requireBaseUrl: boolean
-    supportEmbedding: boolean
     additionalSettings: {
       label: string
       key: string
@@ -418,56 +396,6 @@ export const DEFAULT_CHAT_MODELS: readonly ChatModel[] = [
     providerId: PROVIDER_TYPES_INFO.xai.defaultProviderId,
     id: 'grok-4-1-fast-non-reasoning',
     model: 'grok-4-1-fast-non-reasoning',
-  },
-]
-
-/**
- * Important
- * 1. When adding new default embedding model, settings migration should be added
- * 2. If there's same embedding model id in user's settings, it's data should be overwritten by default embedding model
- */
-export const DEFAULT_EMBEDDING_MODELS: readonly EmbeddingModel[] = [
-  {
-    providerType: 'openai',
-    providerId: PROVIDER_TYPES_INFO.openai.defaultProviderId,
-    id: 'openai/text-embedding-3-small',
-    model: 'text-embedding-3-small',
-    dimension: 1536,
-  },
-  {
-    providerType: 'openai',
-    providerId: PROVIDER_TYPES_INFO.openai.defaultProviderId,
-    id: 'openai/text-embedding-3-large',
-    model: 'text-embedding-3-large',
-    dimension: 3072,
-  },
-  {
-    providerType: 'gemini',
-    providerId: PROVIDER_TYPES_INFO.gemini.defaultProviderId,
-    id: 'gemini/text-embedding-004',
-    model: 'text-embedding-004',
-    dimension: 768,
-  },
-  {
-    providerType: 'ollama',
-    providerId: PROVIDER_TYPES_INFO.ollama.defaultProviderId,
-    id: 'ollama/nomic-embed-text',
-    model: 'nomic-embed-text',
-    dimension: 768,
-  },
-  {
-    providerType: 'ollama',
-    providerId: PROVIDER_TYPES_INFO.ollama.defaultProviderId,
-    id: 'ollama/mxbai-embed-large',
-    model: 'mxbai-embed-large',
-    dimension: 1024,
-  },
-  {
-    providerType: 'ollama',
-    providerId: PROVIDER_TYPES_INFO.ollama.defaultProviderId,
-    id: 'ollama/bge-m3',
-    model: 'bge-m3',
-    dimension: 1024,
   },
 ]
 

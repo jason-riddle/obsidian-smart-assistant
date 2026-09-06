@@ -16,7 +16,6 @@ import { ApplyViewState } from '../../ApplyView'
 import { APPLY_VIEW_TYPE } from '../../constants'
 import { useApp } from '../../contexts/app-context'
 import { useMcp } from '../../contexts/mcp-context'
-import { useRAG } from '../../contexts/rag-context'
 import { useSettings } from '../../contexts/settings-context'
 import {
   LLMAPIKeyInvalidException,
@@ -52,7 +51,6 @@ import AssistantToolMessageGroupItem from './AssistantToolMessageGroupItem'
 import ChatUserInput, { ChatUserInputRef } from './chat-input/ChatUserInput'
 import { editorStateToPlainText } from './chat-input/utils/editor-state-to-plain-text'
 import { ChatListDropdown } from './ChatListDropdown'
-import QueryProgress, { QueryProgressState } from './QueryProgress'
 import { useAutoScroll } from './useAutoScroll'
 import { useChatStreamManager } from './useChatStreamManager'
 import UserMessageItem from './UserMessageItem'
@@ -86,7 +84,6 @@ export type ChatProps = {
 const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
   const app = useApp()
   const { settings, setSettings } = useSettings()
-  const { getRAGEngine } = useRAG()
   const { getMcpManager } = useMcp()
 
   const {
@@ -97,8 +94,8 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
     chatList,
   } = useChatHistory()
   const promptGenerator = useMemo(() => {
-    return new PromptGenerator(getRAGEngine, app, settings)
-  }, [getRAGEngine, app, settings])
+    return new PromptGenerator(app, settings)
+  }, [app, settings])
 
   const [inputMessage, setInputMessage] = useState<ChatUserMessage>(() => {
     const newMessage = getNewInputMessage(app)
@@ -127,9 +124,6 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
   const [focusedMessageId, setFocusedMessageId] = useState<string | null>(null)
   const [currentConversationId, setCurrentConversationId] =
     useState<string>(uuidv4())
-  const [queryProgress, setQueryProgress] = useState<QueryProgressState>({
-    type: 'idle',
-  })
 
   const groupedChatMessages: (ChatUserMessage | AssistantToolMessageGroup)[] =
     useMemo(() => {
@@ -172,9 +166,6 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
       const newInputMessage = getNewInputMessage(app)
       setInputMessage(newInputMessage)
       setFocusedMessageId(newInputMessage.id)
-      setQueryProgress({
-        type: 'idle',
-      })
     } catch (error) {
       new Notice('Failed to load conversation')
       console.error('Failed to load conversation', error)
@@ -200,24 +191,16 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
     }
     setInputMessage(newInputMessage)
     setFocusedMessageId(newInputMessage.id)
-    setQueryProgress({
-      type: 'idle',
-    })
     abortActiveStreams()
   }
 
   const handleUserMessageSubmit = useCallback(
     async ({
       inputChatMessages,
-      useVaultSearch,
     }: {
       inputChatMessages: ChatMessage[]
-      useVaultSearch?: boolean
     }) => {
       abortActiveStreams()
-      setQueryProgress({
-        type: 'idle',
-      })
 
       // Update the chat history to show the new user message
       setChatMessages(inputChatMessages)
@@ -233,28 +216,24 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
       const compiledMessages = await Promise.all(
         inputChatMessages.map(async (message) => {
           if (message.role === 'user' && message.id === lastMessage.id) {
-            const { promptContent, similaritySearchResults } =
+            const { promptContent } =
               await promptGenerator.compileUserMessagePrompt({
                 message,
-                useVaultSearch,
-                onQueryProgressChange: setQueryProgress,
               })
             return {
               ...message,
               promptContent,
-              similaritySearchResults,
             }
           } else if (message.role === 'user' && !message.promptContent) {
             // Ensure all user messages have prompt content
             // This is a fallback for cases where compilation was missed earlier in the process
-            const { promptContent, similaritySearchResults } =
+            const { promptContent } =
               await promptGenerator.compileUserMessagePrompt({
                 message,
               })
             return {
               ...message,
               promptContent,
-              similaritySearchResults,
             }
           }
           return message
@@ -628,7 +607,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
                   ),
                 )
               }}
-              onSubmit={(content, useVaultSearch) => {
+              onSubmit={(content) => {
                 if (editorStateToPlainText(content).trim() === '') return
                 handleUserMessageSubmit({
                   inputChatMessages: [
@@ -647,7 +626,6 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
                       mentionables: messageOrGroup.mentionables,
                     },
                   ],
-                  useVaultSearch,
                 })
                 chatUserInputRefs.current.get(inputMessage.id)?.focus()
               }}
@@ -682,7 +660,6 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
             />
           ),
         )}
-        <QueryProgress state={queryProgress} />
         {showContinueResponseButton && (
           <div className="smtcmp-continue-response-button-container">
             <button
@@ -710,11 +687,10 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
             content,
           }))
         }}
-        onSubmit={(content, useVaultSearch) => {
+        onSubmit={(content) => {
           if (editorStateToPlainText(content).trim() === '') return
           handleUserMessageSubmit({
             inputChatMessages: [...chatMessages, { ...inputMessage, content }],
-            useVaultSearch,
           })
           setInputMessage(getNewInputMessage(app))
         }}

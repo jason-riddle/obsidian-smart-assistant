@@ -40,9 +40,6 @@ export type LexicalContentEditableProps = {
   initialEditorState?: InitialEditorStateType
   autoFocus?: boolean
   plugins?: {
-    onEnter?: {
-      onVaultChat: () => void
-    }
     templatePopover?: {
       anchorElement: HTMLElement | null
     }
@@ -127,7 +124,6 @@ export default function LexicalContentEditable({
       {onEnter && (
         <OnEnterPlugin
           onEnter={onEnter}
-          onVaultChat={plugins?.onEnter?.onVaultChat}
         />
       )}
       <OnMutationPlugin

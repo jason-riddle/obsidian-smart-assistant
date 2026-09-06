@@ -2,7 +2,6 @@ import {
   DEFAULT_APPLY_MODEL_ID,
   DEFAULT_CHAT_MODELS,
   DEFAULT_CHAT_MODEL_ID,
-  DEFAULT_EMBEDDING_MODELS,
   DEFAULT_PROVIDERS,
 } from '../../constants'
 
@@ -18,22 +17,11 @@ describe('parseSmartComposerSettings', () => {
       providers: [...DEFAULT_PROVIDERS],
 
       chatModels: [...DEFAULT_CHAT_MODELS],
-      embeddingModels: [...DEFAULT_EMBEDDING_MODELS],
 
       chatModelId: DEFAULT_CHAT_MODEL_ID,
       applyModelId: DEFAULT_APPLY_MODEL_ID,
-      embeddingModelId: 'openai/text-embedding-3-small',
 
       systemPrompt: '',
-
-      ragOptions: {
-        chunkSize: 1000,
-        thresholdTokens: 8192,
-        minSimilarity: 0.0,
-        limit: 10,
-        excludePatterns: [],
-        includePatterns: [],
-      },
 
       mcp: {
         servers: [],

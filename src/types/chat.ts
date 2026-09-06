@@ -1,7 +1,5 @@
 import { SerializedEditorState } from 'lexical'
 
-import { SelectEmbedding } from '../database/schema'
-
 import { ChatModel } from './chat-model.types'
 import { ContentPart, RequestProviderMetadata } from './llm/request'
 import { Annotation, ResponseUsage } from './llm/response'
@@ -14,9 +12,6 @@ export type ChatUserMessage = {
   promptContent: string | ContentPart[] | null
   id: string
   mentionables: Mentionable[]
-  similaritySearchResults?: (Omit<SelectEmbedding, 'embedding'> & {
-    similarity: number
-  })[]
 }
 export type ChatAssistantMessage = {
   role: 'assistant'
@@ -56,9 +51,6 @@ export type SerializedChatUserMessage = {
   promptContent: string | ContentPart[] | null
   id: string
   mentionables: SerializedMentionable[]
-  similaritySearchResults?: (Omit<SelectEmbedding, 'embedding'> & {
-    similarity: number
-  })[]
 }
 export type SerializedChatAssistantMessage = {
   role: 'assistant'

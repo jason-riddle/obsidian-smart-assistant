@@ -1,9 +1,6 @@
 import { App, TFile, htmlToMarkdown, requestUrl } from 'obsidian'
 
 import { editorStateToPlainText } from '../../components/chat-view/chat-input/utils/editor-state-to-plain-text'
-import { QueryProgressState } from '../../components/chat-view/QueryProgress'
-import { RAGEngine } from '../../core/rag/ragEngine'
-import { SelectEmbedding } from '../../database/schema'
 import { SmartComposerSettings } from '../../settings/schema/setting.types'
 import {
   ChatAssistantMessage,
@@ -18,11 +15,9 @@ import {
   MentionableFolder,
   MentionableImage,
   MentionableUrl,
-  MentionableVault,
 } from '../../types/mentionable'
 import { PromptLevel } from '../../types/prompt-level.types'
 import { ToolCallResponseStatus } from '../../types/tool-call.types'
-import { tokenCount } from '../llm/token'
 import {
   getNestedFiles,
   readMultipleTFiles,
@@ -32,17 +27,11 @@ import {
 import { YoutubeTranscript, isYoutubeUrl } from './youtube-transcript'
 
 export class PromptGenerator {
-  private getRagEngine: () => Promise<RAGEngine>
   private app: App
   private settings: SmartComposerSettings
   private MAX_CONTEXT_MESSAGES = 20
 
-  constructor(
-    getRagEngine: () => Promise<RAGEngine>,
-    app: App,
-    settings: SmartComposerSettings,
-  ) {
-    this.getRagEngine = getRagEngine
+  constructor(app: App, settings: SmartComposerSettings) {
     this.app = app
     this.settings = settings
   }
@@ -61,14 +50,12 @@ export class PromptGenerator {
     const compiledMessages = await Promise.all(
       messages.map(async (message) => {
         if (message.role === 'user' && !message.promptContent) {
-          const { promptContent, similaritySearchResults } =
-            await this.compileUserMessagePrompt({
-              message,
-            })
+          const { promptContent } = await this.compileUserMessagePrompt({
+            message,
+          })
           return {
             ...message,
             promptContent,
-            similaritySearchResults,
           }
         }
         return message
@@ -86,9 +73,8 @@ export class PromptGenerator {
     if (!lastUserMessage) {
       throw new Error('No user messages found')
     }
-    const shouldUseRAG = lastUserMessage.similaritySearchResults !== undefined
 
-    const systemMessage = this.getSystemMessage(shouldUseRAG)
+    const systemMessage = this.getSystemMessage()
 
     const customInstructionMessage = this.getCustomInstructionMessage()
 
@@ -105,9 +91,6 @@ export class PromptGenerator {
       ...(customInstructionMessage ? [customInstructionMessage] : []),
       ...(currentFileMessage ? [currentFileMessage] : []),
       ...this.getChatHistoryMessages({ messages: compiledMessages }),
-      ...(shouldUseRAG && this.getModelPromptLevel() == PromptLevel.Default
-        ? [this.getRagInstructionMessage()]
-        : []),
     ]
 
     return requestMessages
@@ -246,39 +229,19 @@ ${message.annotations
 
   public async compileUserMessagePrompt({
     message,
-    useVaultSearch,
-    onQueryProgressChange,
   }: {
     message: ChatUserMessage
-    useVaultSearch?: boolean
-    onQueryProgressChange?: (queryProgress: QueryProgressState) => void
   }): Promise<{
     promptContent: ChatUserMessage['promptContent']
-    shouldUseRAG: boolean
-    similaritySearchResults?: (Omit<SelectEmbedding, 'embedding'> & {
-      similarity: number
-    })[]
   }> {
     try {
       if (!message.content) {
         return {
           promptContent: '',
-          shouldUseRAG: false,
         }
       }
       const query = editorStateToPlainText(message.content)
-      let similaritySearchResults = undefined
 
-      useVaultSearch =
-        // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-        useVaultSearch ||
-        message.mentionables.some(
-          (m): m is MentionableVault => m.type === 'vault',
-        )
-
-      onQueryProgressChange?.({
-        type: 'reading-mentionables',
-      })
       const files = message.mentionables
         .filter((m): m is MentionableFile => m.type === 'file')
         .map((m) => m.file)
@@ -291,59 +254,11 @@ ${message.annotations
       const allFiles = [...files, ...nestedFiles]
       const fileContents = await readMultipleTFiles(allFiles, this.app.vault)
 
-      // Count tokens incrementally to avoid long processing times on large content sets
-      const exceedsTokenThreshold = async () => {
-        let accTokenCount = 0
-        for (const content of fileContents) {
-          const count = await tokenCount(content)
-          accTokenCount += count
-          if (accTokenCount > this.settings.ragOptions.thresholdTokens) {
-            return true
-          }
-        }
-        return false
-      }
-      const shouldUseRAG = useVaultSearch || (await exceedsTokenThreshold())
-
-      let filePrompt: string
-      if (shouldUseRAG) {
-        similaritySearchResults = useVaultSearch
-          ? await (
-              await this.getRagEngine()
-            ).processQuery({
-              query,
-              onQueryProgressChange: onQueryProgressChange,
-            }) // TODO: Add similarity boosting for mentioned files or folders
-          : await (
-              await this.getRagEngine()
-            ).processQuery({
-              query,
-              scope: {
-                files: files.map((f) => f.path),
-                folders: folders.map((f) => f.path),
-              },
-              onQueryProgressChange: onQueryProgressChange,
-            })
-        filePrompt = `## Potentially Relevant Snippets from the current vault
-${similaritySearchResults
-  .map(({ path, content, metadata }) => {
-    const newContent =
-      this.getModelPromptLevel() == PromptLevel.Default
-        ? this.addLineNumbersToContent({
-            content,
-            startLine: metadata.startLine,
-          })
-        : content
-    return `\`\`\`${path}\n${newContent}\n\`\`\`\n`
-  })
-  .join('')}\n`
-      } else {
-        filePrompt = allFiles
-          .map((file, index) => {
-            return `\`\`\`${file.path}\n${fileContents[index]}\n\`\`\`\n`
-          })
-          .join('')
-      }
+      const filePrompt = allFiles
+        .map((file, index) => {
+          return `\`\`\`${file.path}\n${fileContents[index]}\n\`\`\`\n`
+        })
+        .join('')
 
       const blocks = message.mentionables.filter(
         (m): m is MentionableBlock => m.type === 'block',
@@ -379,11 +294,6 @@ ${await this.getWebsiteContent(url)}
         .filter((m): m is MentionableImage => m.type === 'image')
         .map(({ data }) => data)
 
-      // Reset query progress
-      onQueryProgressChange?.({
-        type: 'idle',
-      })
-
       return {
         promptContent: [
           ...imageDataUrls.map(
@@ -399,19 +309,14 @@ ${await this.getWebsiteContent(url)}
             text: `${filePrompt}${blockPrompt}${urlPrompt}\n\n${query}\n\n`,
           },
         ],
-        shouldUseRAG,
-        similaritySearchResults: similaritySearchResults,
       }
     } catch (error) {
       console.error('Failed to compile user message', error)
-      onQueryProgressChange?.({
-        type: 'idle',
-      })
       throw error
     }
   }
 
-  private getSystemMessage(shouldUseRAG: boolean): RequestMessage {
+  private getSystemMessage(): RequestMessage {
     const modelPromptLevel = this.getModelPromptLevel()
     const systemPrompt = `You are an intelligent assistant to help answer any questions that the user has${modelPromptLevel == PromptLevel.Default ? `, particularly about editing and organizing markdown files in Obsidian` : ''}.
 
@@ -451,38 +356,9 @@ The user has full access to the file, so they prefer seeing only the changes in 
     : ''
 }`
 
-    const systemPromptRAG = `You are an intelligent assistant to help answer any questions that the user has${modelPromptLevel == PromptLevel.Default ? `, particularly about editing and organizing markdown files in Obsidian` : ''}. You will be given your conversation history with them and potentially relevant blocks of markdown content from the current vault.
-      
-1. Do not lie or make up facts.
-
-2. Format your response in markdown.
-
-${
-  modelPromptLevel == PromptLevel.Default
-    ? `3. Respond in the same language as the user's message.
-
-4. When referencing markdown blocks in your answer, keep the following guidelines in mind:
-
-  a. Never include line numbers in the output markdown.
-
-  b. Wrap the markdown block with <smtcmp_block> tags. Include language attribute. For example:
-  <smtcmp_block language="markdown">
-  {{ content }}
-  </smtcmp_block>
-
-  c. When providing markdown blocks for an existing file, also include the filename attribute to the <smtcmp_block> tags. For example:
-  <smtcmp_block filename="path/to/file.md" language="markdown">
-  {{ content }}
-  </smtcmp_block>
-
-  d. When referencing a markdown block the user gives you, only add the startLine and endLine attributes to the <smtcmp_block> tags. Write related content outside of the <smtcmp_block> tags. The content inside the <smtcmp_block> tags will be ignored and replaced with the actual content of the markdown block. For example:
-  <smtcmp_block filename="path/to/file.md" language="markdown" startLine="2" endLine="30"></smtcmp_block>`
-    : ''
-}`
-
     return {
       role: 'system',
-      content: shouldUseRAG ? systemPromptRAG : systemPrompt,
+      content: systemPrompt,
     }
   }
 
@@ -513,30 +389,6 @@ Here is the file I'm looking at.
 ${fileContent}
 \`\`\`\n\n`,
     }
-  }
-
-  private getRagInstructionMessage(): RequestMessage {
-    return {
-      role: 'user',
-      content: `If you need to reference any of the markdown blocks I gave you, add the startLine and endLine attributes to the <smtcmp_block> tags without any content inside. For example:
-<smtcmp_block filename="path/to/file.md" language="markdown" startLine="200" endLine="310"></smtcmp_block>
-
-When writing out new markdown blocks, remember not to include "line_number|" at the beginning of each line.`,
-    }
-  }
-
-  private addLineNumbersToContent({
-    content,
-    startLine,
-  }: {
-    content: string
-    startLine: number
-  }): string {
-    const lines = content.split('\n')
-    const linesWithNumbers = lines.map((line, index) => {
-      return `${startLine + index}|${line}`
-    })
-    return linesWithNumbers.join('\n')
   }
 
   /**

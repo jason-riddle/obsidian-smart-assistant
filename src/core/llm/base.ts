@@ -28,10 +28,4 @@ export abstract class BaseLLMProvider<P extends LLMProvider> {
     request: LLMRequestStreaming,
     options?: LLMOptions,
   ): Promise<AsyncIterable<LLMResponseStreaming>>
-
-  abstract getEmbedding(
-    model: string,
-    text: string,
-    options?: { dimensions?: number },
-  ): Promise<number[]>
 }

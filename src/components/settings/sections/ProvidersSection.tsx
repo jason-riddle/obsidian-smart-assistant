@@ -8,7 +8,6 @@ import {
   PROVIDER_TYPES_INFO,
 } from '../../../constants'
 import { useSettings } from '../../../contexts/settings-context'
-import { getEmbeddingModelClient } from '../../../core/rag/embedding'
 import SmartComposerPlugin from '../../../main'
 import { LLMProvider } from '../../../types/provider.types'
 import { ConfirmModal } from '../../modals/ConfirmModal'
@@ -33,50 +32,23 @@ export function ProvidersSection({ app, plugin }: ProvidersSectionProps) {
     const associatedChatModels = settings.chatModels.filter(
       (m) => m.providerId === provider.id,
     )
-    const associatedEmbeddingModels = settings.embeddingModels.filter(
-      (m) => m.providerId === provider.id,
-    )
 
     const message =
       `Are you sure you want to delete provider "${provider.id}"?\n\n` +
       `This will also delete:\n` +
-      `- ${associatedChatModels.length} chat model(s)\n` +
-      `- ${associatedEmbeddingModels.length} embedding model(s)\n\n` +
-      `All embeddings generated using the associated embedding models will also be deleted.`
+      `- ${associatedChatModels.length} chat model(s)\n`
 
     new ConfirmModal(app, {
       title: 'Delete Provider',
       message: message,
       ctaText: 'Delete',
       onConfirm: async () => {
-        const vectorManager = (await plugin.getDbManager()).getVectorManager()
-        const embeddingStats = await vectorManager.getEmbeddingStats()
-
-        // Clear embeddings for each associated embedding model
-        for (const embeddingModel of associatedEmbeddingModels) {
-          const embeddingStat = embeddingStats.find(
-            (v) => v.model === embeddingModel.id,
-          )
-
-          if (embeddingStat?.rowCount && embeddingStat.rowCount > 0) {
-            // only clear when there's data
-            const embeddingModelClient = getEmbeddingModelClient({
-              settings,
-              embeddingModelId: embeddingModel.id,
-            })
-            await vectorManager.clearAllVectors(embeddingModelClient)
-          }
-        }
-
         await setSettings({
           ...settings,
           providers: [...settings.providers].filter(
             (v) => v.id !== provider.id,
           ),
           chatModels: [...settings.chatModels].filter(
-            (v) => v.providerId !== provider.id,
-          ),
-          embeddingModels: [...settings.embeddingModels].filter(
             (v) => v.providerId !== provider.id,
           ),
         })

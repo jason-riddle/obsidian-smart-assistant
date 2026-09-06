@@ -11,7 +11,6 @@ export const baseLlmProviderSchema = z.object({
  * When adding a new provider, make sure to update these files:
  * - src/constants.ts
  * - src/types/chat-model.types.ts
- * - src/types/embedding-model.types.ts
  * - src/core/llm/manager.ts
  */
 export const llmProviderSchema = z.discriminatedUnion('type', [

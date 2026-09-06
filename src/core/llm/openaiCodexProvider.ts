@@ -73,16 +73,6 @@ export class OpenAICodexProvider extends BaseLLMProvider<
     return this.adapter.streamResponse(normalizedRequest, options, authHeaders)
   }
 
-  async getEmbedding(
-    _model: string,
-    _text: string,
-    _options?: { dimensions?: number },
-  ): Promise<number[]> {
-    throw new Error(
-      `Provider ${this.provider.id} does not support embeddings. Please use a different provider.`,
-    )
-  }
-
   private async getAuthHeaders(): Promise<Record<string, string>> {
     if (!this.provider.oauth?.refreshToken) {
       throw new LLMAPIKeyNotSetException(

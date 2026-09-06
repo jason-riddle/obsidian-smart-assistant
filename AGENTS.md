@@ -26,8 +26,7 @@ npm run test         # jest
 ### Entry point
 
 - **`src/main.ts`** — Plugin entrypoint. Manages lifecycle (load/unload),
-  settings, view registration, and initializes McpManager, DatabaseManager,
-  and RAGEngine.
+  settings, view registration, and initializes McpManager.
 
 ### Core systems
 
@@ -46,11 +45,6 @@ npm run test         # jest
     xAI, DeepSeek, Azure OpenAI, LM Studio, OpenRouter, Codex, Claude Code.
   - Message adapters for non-OpenAI-compatible providers.
 
-- **`src/core/rag/`** — RAG (Retrieval-Augmented Generation) engine.
-  - **DEPRECATED** — slated for removal in Phase 3 of the refactor.
-  - `ragEngine.ts` — Embedding-based document retrieval.
-  - `embedding.ts` — Embedding model integration.
-
 ### Settings system
 
 - **`src/settings/schema/setting.types.ts`** — Zod schema for all plugin
@@ -64,9 +58,8 @@ npm run test         # jest
 
 ### Database
 
-- **`src/database/`** — JSON-based storage (PGlite is being removed).
-  - `DatabaseManager.ts` — Database lifecycle.
-  - `json/` — JSON storage implementation (chat history, templates).
+- **`src/database/json/`** — JSON-based storage for chat history and
+  templates. File context is provided via explicit @-mentions only.
 
 ### UI components
 

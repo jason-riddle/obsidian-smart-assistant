@@ -3,12 +3,8 @@ import { Editor, MarkdownView, Notice, Plugin } from 'obsidian'
 import { ApplyView } from './ApplyView'
 import { ChatView } from './ChatView'
 import { ChatProps } from './components/chat-view/Chat'
-import { InstallerUpdateRequiredModal } from './components/modals/InstallerUpdateRequiredModal'
 import { APPLY_VIEW_TYPE, CHAT_VIEW_TYPE } from './constants'
 import { McpManager } from './core/mcp/mcpManager'
-import { RAGEngine } from './core/rag/ragEngine'
-import { DatabaseManager } from './database/DatabaseManager'
-import { PGLiteAbortedException } from './database/exception'
 import { migrateToJsonDatabase } from './database/json/migrateToJsonDatabase'
 import {
   SmartComposerSettings,
@@ -23,11 +19,6 @@ export default class SmartComposerPlugin extends Plugin {
   initialChatProps?: ChatProps // TODO: change this to use view state like ApplyView
   settingsChangeListeners: ((newSettings: SmartComposerSettings) => void)[] = []
   mcpManager: McpManager | null = null
-  dbManager: DatabaseManager | null = null
-  ragEngine: RAGEngine | null = null
-  private dbManagerInitPromise: Promise<DatabaseManager> | null = null
-  private ragEngineInitPromise: Promise<RAGEngine> | null = null
-  private timeoutIds: ReturnType<typeof setTimeout>[] = [] // Use ReturnType instead of number
 
   async onload() {
     await this.loadSettings()
@@ -55,76 +46,6 @@ export default class SmartComposerPlugin extends Plugin {
       },
     })
 
-    this.addCommand({
-      id: 'rebuild-vault-index',
-      name: 'Rebuild entire vault index',
-      callback: async () => {
-        const notice = new Notice('Rebuilding vault index...', 0)
-        try {
-          const ragEngine = await this.getRAGEngine()
-          await ragEngine.updateVaultIndex(
-            { reindexAll: true },
-            (queryProgress) => {
-              if (queryProgress.type === 'indexing') {
-                const { completedChunks, totalChunks } =
-                  queryProgress.indexProgress
-                notice.setMessage(
-                  `Indexing chunks: ${completedChunks} / ${totalChunks}${
-                    queryProgress.indexProgress.waitingForRateLimit
-                      ? '\n(waiting for rate limit to reset)'
-                      : ''
-                  }`,
-                )
-              }
-            },
-          )
-          notice.setMessage('Rebuilding vault index complete')
-        } catch (error) {
-          console.error(error)
-          notice.setMessage('Rebuilding vault index failed')
-        } finally {
-          this.registerTimeout(() => {
-            notice.hide()
-          }, 1000)
-        }
-      },
-    })
-
-    this.addCommand({
-      id: 'update-vault-index',
-      name: 'Update index for modified files',
-      callback: async () => {
-        const notice = new Notice('Updating vault index...', 0)
-        try {
-          const ragEngine = await this.getRAGEngine()
-          await ragEngine.updateVaultIndex(
-            { reindexAll: false },
-            (queryProgress) => {
-              if (queryProgress.type === 'indexing') {
-                const { completedChunks, totalChunks } =
-                  queryProgress.indexProgress
-                notice.setMessage(
-                  `Indexing chunks: ${completedChunks} / ${totalChunks}${
-                    queryProgress.indexProgress.waitingForRateLimit
-                      ? '\n(waiting for rate limit to reset)'
-                      : ''
-                  }`,
-                )
-              }
-            },
-          )
-          notice.setMessage('Vault index updated')
-        } catch (error) {
-          console.error(error)
-          notice.setMessage('Vault index update failed')
-        } finally {
-          this.registerTimeout(() => {
-            notice.hide()
-          }, 1000)
-        }
-      },
-    })
-
     // This adds a settings tab so the user can configure various aspects of the plugin
     this.addSettingTab(new SmartComposerSettingTab(this.app, this))
 
@@ -132,22 +53,6 @@ export default class SmartComposerPlugin extends Plugin {
   }
 
   onunload() {
-    // clear all timers
-    this.timeoutIds.forEach((id) => clearTimeout(id))
-    this.timeoutIds = []
-
-    // RagEngine cleanup
-    this.ragEngine?.cleanup()
-    this.ragEngine = null
-
-    // Promise cleanup
-    this.dbManagerInitPromise = null
-    this.ragEngineInitPromise = null
-
-    // DatabaseManager cleanup
-    this.dbManager?.cleanup()
-    this.dbManager = null
-
     // McpManager cleanup
     this.mcpManager?.cleanup()
     this.mcpManager = null
@@ -169,7 +74,6 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
 
     this.settings = newSettings
     await this.saveData(newSettings)
-    this.ragEngine?.setSettings(newSettings)
     this.settingsChangeListeners.forEach((listener) => listener(newSettings))
   }
 
@@ -240,55 +144,6 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
     chatView.focusMessage()
   }
 
-  async getDbManager(): Promise<DatabaseManager> {
-    if (this.dbManager) {
-      return this.dbManager
-    }
-
-    if (!this.dbManagerInitPromise) {
-      this.dbManagerInitPromise = (async () => {
-        try {
-          this.dbManager = await DatabaseManager.create(this.app)
-          return this.dbManager
-        } catch (error) {
-          this.dbManagerInitPromise = null
-          if (error instanceof PGLiteAbortedException) {
-            new InstallerUpdateRequiredModal(this.app).open()
-          }
-          throw error
-        }
-      })()
-    }
-
-    // if initialization is running, wait for it to complete instead of creating a new initialization promise
-    return this.dbManagerInitPromise
-  }
-
-  async getRAGEngine(): Promise<RAGEngine> {
-    if (this.ragEngine) {
-      return this.ragEngine
-    }
-
-    if (!this.ragEngineInitPromise) {
-      this.ragEngineInitPromise = (async () => {
-        try {
-          const dbManager = await this.getDbManager()
-          this.ragEngine = new RAGEngine(
-            this.app,
-            this.settings,
-            dbManager.getVectorManager(),
-          )
-          return this.ragEngine
-        } catch (error) {
-          this.ragEngineInitPromise = null
-          throw error
-        }
-      })()
-    }
-
-    return this.ragEngineInitPromise
-  }
-
   async getMcpManager(): Promise<McpManager> {
     if (this.mcpManager) {
       return this.mcpManager
@@ -309,15 +164,9 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
     }
   }
 
-  private registerTimeout(callback: () => void, timeout: number): void {
-    const timeoutId = setTimeout(callback, timeout)
-    this.timeoutIds.push(timeoutId)
-  }
-
   private async migrateToJsonStorage() {
     try {
-      const dbManager = await this.getDbManager()
-      await migrateToJsonDatabase(this.app, dbManager, async () => {
+      await migrateToJsonDatabase(this.app, async () => {
         await this.reloadChatView()
         console.log('Migration to JSON storage completed successfully')
       })

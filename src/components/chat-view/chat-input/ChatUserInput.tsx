@@ -33,7 +33,6 @@ import { MentionNode } from './plugins/mention/MentionNode'
 import { NodeMutations } from './plugins/on-mutation/OnMutationPlugin'
 import { SubmitButton } from './SubmitButton'
 import ToolBadge from './ToolBadge'
-import { VaultChatButton } from './VaultChatButton'
 
 export type ChatUserInputRef = {
   focus: () => void
@@ -42,7 +41,7 @@ export type ChatUserInputRef = {
 export type ChatUserInputProps = {
   initialSerializedEditorState: SerializedEditorState | null
   onChange: (content: SerializedEditorState) => void
-  onSubmit: (content: SerializedEditorState, useVaultSearch?: boolean) => void
+  onSubmit: (content: SerializedEditorState) => void
   onFocus: () => void
   mentionables: Mentionable[]
   setMentionables: (mentionables: Mentionable[]) => void
@@ -195,9 +194,9 @@ const ChatUserInput = forwardRef<ChatUserInputRef, ChatUserInputProps>(
       handleCreateImageMentionables(mentionableImages)
     }
 
-    const handleSubmit = (options: { useVaultSearch?: boolean } = {}) => {
+    const handleSubmit = () => {
       const content = editorRef.current?.getEditorState()?.toJSON()
-      content && onSubmit(content, options.useVaultSearch)
+      content && onSubmit(content)
     }
 
     return (
@@ -254,17 +253,12 @@ const ChatUserInput = forwardRef<ChatUserInputRef, ChatUserInputProps>(
           editorRef={editorRef}
           contentEditableRef={contentEditableRef}
           onChange={onChange}
-          onEnter={() => handleSubmit({ useVaultSearch: false })}
+          onEnter={() => handleSubmit()}
           onFocus={onFocus}
           onMentionNodeMutation={handleMentionNodeMutation}
           onCreateImageMentionables={handleCreateImageMentionables}
           autoFocus={autoFocus}
           plugins={{
-            onEnter: {
-              onVaultChat: () => {
-                handleSubmit({ useVaultSearch: true })
-              },
-            },
             templatePopover: {
               anchorElement: containerRef.current,
             },
@@ -278,11 +272,6 @@ const ChatUserInput = forwardRef<ChatUserInputRef, ChatUserInputProps>(
           <div className="smtcmp-chat-user-input-controls__buttons">
             <ImageUploadButton onUpload={handleUploadImages} />
             <SubmitButton onClick={() => handleSubmit()} />
-            <VaultChatButton
-              onClick={() => {
-                handleSubmit({ useVaultSearch: true })
-              }}
-            />
           </div>
         </div>
       </div>
