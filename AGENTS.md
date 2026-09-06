@@ -73,7 +73,7 @@ npm run test         # jest — DO NOT RUN without explicit user approval
   settings (`smartComposerSettingsSchema`).
 - **`src/settings/schema/settings.ts`** — Settings parsing and validation.
 - **`src/settings/schema/migrations/`** — Versioned migration chain.
-  - `index.ts` — Exports `SETTINGS_SCHEMA_VERSION` (currently 20) and the
+  - `index.ts` — Exports `SETTINGS_SCHEMA_VERSION` (currently 21) and the
     `SETTING_MIGRATIONS` array.
   - Each file `N_to_(N+1).ts` contains a single migration function.
 - **`src/settings/SettingTab.tsx`** — Obsidian settings UI (React).
@@ -252,6 +252,14 @@ chain. The current schema version is `SETTINGS_SCHEMA_VERSION` (20).
 5. Update the Zod schema in `src/settings/schema/setting.types.ts` if
    new fields are added.
 
+### System Prompt Settings
+
+The Chat settings expose `systemPromptMode` with `default`, `minimal`, and
+`custom` values. Default and Minimal use the built-in prompts exported from
+`src/constants.ts`; Custom uses the editable `systemPrompt` field. The legacy
+`systemPromptFile` field remains in the schema for compatibility but is not
+used by prompt generation.
+
 ## Skills System
 
 Skills replace the former Prompt Templates. A skill is a reusable set
@@ -336,7 +344,9 @@ always run immediately.
 
 ## Code Conventions
 
-- Follow **Google TypeScript Style Guide**.
+- Follow **Google TypeScript Style Guide**, except where it conflicts
+  with **Prettier** formatting — when they disagree, **Prettier wins**
+  (run `npm run lint:fix` to apply).
 - Aim for **Google standard library quality level** of code.
 - Code must be **easy to read, easy to debug, and easy to follow**.
 - Prefer **simple, straightforward** implementations over clever or
