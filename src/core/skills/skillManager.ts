@@ -1,5 +1,6 @@
 import { App, EventRef, normalizePath } from "obsidian"
 
+import { logger } from "../../utils/logger"
 import { BUNDLED_SKILLS } from "./bundledSkills"
 import {
   Skill,
@@ -51,8 +52,14 @@ export class SkillManager {
   }
 
   public async loadSkills(): Promise<Skill[]> {
+    logger.info("SkillManager", "loadSkills", "Loading skills...")
     const vaultSkills = await this.loadVaultSkills()
     const bundledSkills = BUNDLED_SKILLS
+    logger.debug(
+      "SkillManager",
+      "loadSkills",
+      `Found ${vaultSkills.length} vault skills, ${bundledSkills.length} bundled skills`,
+    )
     const skillsByName = new Map<string, Skill>()
     for (const skill of bundledSkills) {
       skillsByName.set(skill.name, skill)
@@ -62,6 +69,11 @@ export class SkillManager {
     }
     this.skills = Array.from(skillsByName.values()).sort((a, b) =>
       a.name.localeCompare(b.name),
+    )
+    logger.info(
+      "SkillManager",
+      "loadSkills",
+      `Loaded ${this.skills.length} skills total`,
     )
     this.notifySubscribers()
     return this.skills
@@ -80,6 +92,7 @@ export class SkillManager {
     path: string,
     source: "vault" | "bundled",
   ): Skill {
+    logger.debug("SkillManager", "parseSkillFile", `Parsing skill file: ${path}`)
     const { frontmatter: rawFrontmatter, body } = parseFrontmatter(content)
     const parsed = skillFrontmatterSchema.safeParse(rawFrontmatter)
     if (!parsed.success) {
@@ -195,7 +208,12 @@ export class SkillManager {
         const skill = this.parseSkillFile(content, skillFilePath, "vault")
         skills.push(skill)
       } catch (error) {
-        console.error(error)
+        logger.error(
+          "SkillManager",
+          "loadVaultSkills",
+          `Failed to parse skill file: ${skillFilePath}`,
+          error,
+        )
       }
     }
     return skills

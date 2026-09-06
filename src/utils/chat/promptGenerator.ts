@@ -25,6 +25,7 @@ import {
   readTFileContent,
 } from '../obsidian'
 
+import { logger } from '../logger'
 import { YoutubeTranscript, isYoutubeUrl } from './youtube-transcript'
 
 export class PromptGenerator {
@@ -237,6 +238,11 @@ ${message.annotations
   }): Promise<{
     promptContent: ChatUserMessage['promptContent']
   }> {
+    logger.debug(
+      'PromptGenerator',
+      'compileUserMessagePrompt',
+      'Compiling user message prompt...',
+    )
     try {
       if (!message.content) {
         return {
@@ -314,7 +320,12 @@ ${await this.getWebsiteContent(url)}
         ],
       }
     } catch (error) {
-      console.error('Failed to compile user message', error)
+      logger.error(
+        'PromptGenerator',
+        'compileUserMessagePrompt',
+        'Failed to compile user message',
+        error,
+      )
       throw error
     }
   }
@@ -386,8 +397,18 @@ Use the \`read_skill\` tool with a skill's name to load its full instructions wh
     if (!filePath) {
       return null
     }
+    logger.debug(
+      'PromptGenerator',
+      'getCustomInstructionMessage',
+      `Reading system prompt file: ${filePath}`,
+    )
     const file = this.app.vault.getFileByPath(filePath)
     if (!file) {
+      logger.warn(
+        'PromptGenerator',
+        'getCustomInstructionMessage',
+        `System prompt file not found: ${filePath}`,
+      )
       return null
     }
     const customInstruction = (await readTFileContent(file, this.app.vault)).trim()
@@ -434,7 +455,12 @@ ${fileContent}
 Video Transcript:
 ${transcript.map((t) => `${t.offset}: ${t.text}`).join('\n')}`
       } catch (error) {
-        console.error('Error fetching YouTube transcript', error)
+        logger.error(
+          'PromptGenerator',
+          'getWebsiteContent',
+          'Error fetching YouTube transcript',
+          error,
+        )
       }
     }
 

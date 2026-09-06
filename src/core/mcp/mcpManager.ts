@@ -26,6 +26,7 @@ import {
   parseToolName,
   validateServerName,
 } from './tool-name-utils'
+import { logger } from '../../utils/logger'
 
 type CreateClientResult =
   | McpClient
@@ -85,6 +86,13 @@ export class McpManager {
     if (this.disabled) {
       return
     }
+
+    const serverCount = this.settings.mcp.servers.length
+    logger.info(
+      'McpManager',
+      'initialize',
+      `Initializing MCP manager, ${serverCount} servers configured`,
+    )
 
     if (this.oauthTokenStore) {
       await this.oauthTokenStore.load()
@@ -218,6 +226,12 @@ export class McpManager {
 
     const { id: name, parameters: serverParams, enabled } = serverConfig
 
+    logger.debug(
+      'McpManager',
+      'connectServer',
+      `Connecting to server: ${name}, transport: ${serverParams.type}`,
+    )
+
     if (!enabled) {
       return {
         name,
@@ -229,6 +243,11 @@ export class McpManager {
     try {
       validateServerName(name)
     } catch (error) {
+      logger.warn(
+        'McpManager',
+        'connectServer',
+        `Failed to connect to server: ${name}: ${error instanceof Error ? error.message : String(error)}`,
+      )
       return {
         name,
         config: serverConfig,
@@ -244,6 +263,11 @@ export class McpManager {
     )
 
     if (clientResult instanceof Error) {
+      logger.warn(
+        'McpManager',
+        'connectServer',
+        `Failed to connect to server: ${name}: ${clientResult.message}`,
+      )
       return {
         name,
         config: serverConfig,
@@ -264,6 +288,7 @@ export class McpManager {
 
     try {
       const toolList = await client.listTools()
+      logger.info('McpManager', 'connectServer', `Connected to server: ${name}`)
       return {
         name,
         config: serverConfig,
@@ -273,6 +298,11 @@ export class McpManager {
       }
     } catch (error) {
       await client.close().catch(() => {})
+      logger.warn(
+        'McpManager',
+        'connectServer',
+        `Failed to list tools for server: ${name}: ${error instanceof Error ? error.message : String(error)}`,
+      )
       return {
         name,
         config: serverConfig,
@@ -488,14 +518,28 @@ export class McpManager {
 
     const { serverName, transport, serverConfig } = pending
 
-    await transport.finishAuth(params)
+    try {
+      await transport.finishAuth(params)
 
-    const server = await this.connectServer(serverConfig)
-    this.updateServers((prevServers) =>
-      prevServers.map((prevServer) =>
-        prevServer.name === serverName ? server : prevServer,
-      ),
-    )
+      const server = await this.connectServer(serverConfig)
+      this.updateServers((prevServers) =>
+        prevServers.map((prevServer) =>
+          prevServer.name === serverName ? server : prevServer,
+        ),
+      )
+      logger.info(
+        'McpManager',
+        'completeOAuthFlow',
+        `OAuth flow completed for server: ${serverName}`,
+      )
+    } catch (error) {
+      logger.warn(
+        'McpManager',
+        'completeOAuthFlow',
+        `OAuth flow failed for server: ${serverName}: ${error instanceof Error ? error.message : String(error)}`,
+      )
+      throw error
+    }
   }
 
   public async reconnectServer(serverName: string): Promise<void> {
@@ -553,7 +597,9 @@ export class McpManager {
                 name: getToolName(server.name, tool.name),
               }))
           } catch (error) {
-            console.error(
+            logger.warn(
+              'McpManager',
+              'listAvailableTools',
               `Failed to list tools for MCP server ${server.name}: ${error instanceof Error ? error.message : String(error)}`,
             )
             return []
@@ -664,6 +710,12 @@ export class McpManager {
       }
       const { client } = server
 
+      logger.debug(
+        'McpManager',
+        'callTool',
+        `Calling tool: ${toolName} on server: ${serverName}`,
+      )
+
       const parsedArgs: Record<string, unknown> | undefined =
         typeof args === 'string' ? (args === '' ? {} : JSON.parse(args)) : args
 
@@ -686,11 +738,17 @@ export class McpManager {
         )
       }
       if (result.isError) {
+        logger.warn(
+          'McpManager',
+          'callTool',
+          `Tool call failed: ${toolName}: ${result.content[0].text}`,
+        )
         return {
           status: ToolCallResponseStatus.Error,
           error: result.content[0].text,
         }
       }
+      logger.info('McpManager', 'callTool', `Tool call completed: ${toolName}`)
       return {
         status: ToolCallResponseStatus.Success,
         data: {
@@ -706,6 +764,11 @@ export class McpManager {
       }
 
       // Handle other errors
+      logger.warn(
+        'McpManager',
+        'callTool',
+        `Tool call failed: ${name}: ${error instanceof Error ? error.message : String(error)}`,
+      )
       return {
         status: ToolCallResponseStatus.Error,
         error: error.message || 'Unknown error occurred',

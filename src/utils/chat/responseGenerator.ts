@@ -25,6 +25,7 @@ import {
 
 import { fetchAnnotationTitles } from './fetch-annotation-titles'
 import { PromptGenerator } from './promptGenerator'
+import { logger } from '../logger'
 
 export type ResponseGeneratorParams = {
   providerClient: BaseLLMProvider<LLMProvider>
@@ -76,9 +77,15 @@ export class ResponseGenerator {
   }
 
   public async run() {
+    logger.info('ResponseGenerator', 'run', 'Starting response generation...')
     for (let i = 0; i < this.maxAutoIterations; i++) {
       const { toolCallRequests } = await this.streamSingleResponse()
       if (toolCallRequests.length === 0) {
+        logger.info(
+          'ResponseGenerator',
+          'run',
+          'Response generation complete',
+        )
         return
       }
 
@@ -164,8 +171,18 @@ export class ResponseGenerator {
     >
   > {
     if (this.isBuiltinTool(toolCall.name)) {
+      logger.debug(
+        'ResponseGenerator',
+        'run',
+        `Built-in tool dispatched: ${toolCall.name}`,
+      )
       return this.executeBuiltinTool(toolCall)
     }
+    logger.debug(
+      'ResponseGenerator',
+      'run',
+      `Tool call requested: ${toolCall.name}`,
+    )
     return this.mcpManager.callTool({
       name: toolCall.name,
       args: toolCall.arguments,

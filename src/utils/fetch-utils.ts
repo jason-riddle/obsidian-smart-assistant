@@ -1,5 +1,7 @@
 import { requestUrl } from 'obsidian'
 
+import { logger } from './logger'
+
 export async function fetchUrlTitle(url: string): Promise<string | null> {
   try {
     const headResponse = await requestUrl({
@@ -35,7 +37,7 @@ export async function fetchUrlTitle(url: string): Promise<string | null> {
 
     return title
   } catch (error) {
-    console.warn(`Failed to fetch title for ${url}:`, error)
+    logger.warn('fetch-utils', 'fetchUrlTitle', `Failed to fetch title for ${url}`, error)
     return null
   }
 }

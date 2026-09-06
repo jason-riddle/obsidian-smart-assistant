@@ -13,6 +13,7 @@ import {
 import { parseSmartComposerSettings } from './settings/schema/settings'
 import { SmartComposerSettingTab } from './settings/SettingTab'
 import { getMentionableBlockData } from './utils/obsidian'
+import { logger } from './utils/logger'
 
 export default class SmartComposerPlugin extends Plugin {
   settings: SmartComposerSettings
@@ -21,7 +22,9 @@ export default class SmartComposerPlugin extends Plugin {
   mcpManager: McpManager | null = null
 
   async onload() {
+    logger.info('main', 'onload', 'Plugin loading...')
     await this.loadSettings()
+    logger.info('main', 'onload', 'Plugin loaded successfully')
 
     this.registerView(CHAT_VIEW_TYPE, (leaf) => new ChatView(leaf, this))
     this.registerView(APPLY_VIEW_TYPE, (leaf) => new ApplyView(leaf))
@@ -60,12 +63,14 @@ export default class SmartComposerPlugin extends Plugin {
   }
 
   onunload() {
+    logger.info('main', 'onunload', 'Plugin unloading...')
     // McpManager cleanup
     this.mcpManager?.cleanup()
     this.mcpManager = null
   }
 
   async loadSettings() {
+    logger.debug('main', 'loadSettings', 'Loading settings...')
     this.settings = parseSmartComposerSettings(await this.loadData())
     await this.saveData(this.settings) // Save updated settings
   }
@@ -82,6 +87,7 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
     this.settings = newSettings
     await this.saveData(newSettings)
     this.settingsChangeListeners.forEach((listener) => listener(newSettings))
+    logger.debug('main', 'setSettings', 'Settings updated')
   }
 
   addSettingsChangeListener(
@@ -176,10 +182,19 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
     try {
       await migrateToJsonDatabase(this.app, async () => {
         await this.reloadChatView()
-        console.log('Migration to JSON storage completed successfully')
+        logger.info(
+          'main',
+          'migrateToJsonStorage',
+          'Migration to JSON storage completed successfully',
+        )
       })
     } catch (error) {
-      console.error('Failed to migrate to JSON storage:', error)
+      logger.error(
+        'main',
+        'migrateToJsonStorage',
+        'Failed to migrate to JSON storage',
+        error,
+      )
       new Notice(
         'Failed to migrate to JSON storage. Please check the console for details.',
       )
@@ -218,7 +233,7 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
       await mcpManager.completeOAuthFlow(state, urlParams)
       new Notice('MCP server authentication successful')
     } catch (error) {
-      console.error('MCP OAuth callback error:', error)
+      logger.error('main', 'handleOAuthCallback', 'MCP OAuth callback error', error)
       new Notice(
         `MCP server authentication failed: ${error instanceof Error ? error.message : String(error)}`,
       )

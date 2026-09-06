@@ -44,6 +44,7 @@ import {
 } from '../../utils/chat/mentionable'
 import { groupAssistantAndToolMessages } from '../../utils/chat/message-groups'
 import { PromptGenerator } from '../../utils/chat/promptGenerator'
+import { logger } from '../../utils/logger'
 import { readTFileContent } from '../../utils/obsidian'
 import { ErrorModal } from '../modals/ErrorModal'
 import { SkillsSectionModal } from '../modals/SkillsSectionModal'
@@ -170,7 +171,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
       setFocusedMessageId(newInputMessage.id)
     } catch (error) {
       new Notice('Failed to load conversation')
-      console.error('Failed to load conversation', error)
+      logger.error('Chat', 'handleLoadConversation', 'Failed to load conversation', error)
     }
   }
 
@@ -312,7 +313,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
         }).open()
       } else {
         new Notice(error.message)
-        console.error('Failed to apply changes', error)
+        logger.error('Chat', 'applyMutation', 'Failed to apply changes', error)
       }
     },
   })
@@ -422,7 +423,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
         }
       } catch (error) {
         new Notice('Failed to save chat history')
-        console.error('Failed to save chat history', error)
+        logger.error('Chat', 'updateConversationAsync', 'Failed to save chat history', error)
       }
     }
     updateConversationAsync()

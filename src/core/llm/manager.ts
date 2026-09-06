@@ -1,6 +1,7 @@
 import { SmartComposerSettings } from '../../settings/schema/setting.types'
 import { ChatModel } from '../../types/chat-model.types'
 import { LLMProvider } from '../../types/provider.types'
+import { logger } from '../../utils/logger'
 
 import { AnthropicProvider } from './anthropic'
 import { AzureOpenAIProvider } from './azureOpenaiProvider'
@@ -107,6 +108,12 @@ export function getChatModelClient({
   if (!chatModel) {
     throw new LLMModelNotFoundException(`Chat model ${modelId} not found`)
   }
+
+  logger.debug(
+    'LLMManager',
+    'getChatModelClient',
+    `Creating chat model client for provider: ${chatModel.providerType}, model: ${chatModel.model}`,
+  )
 
   const providerClient = getProviderClient({
     providerId: chatModel.providerId,

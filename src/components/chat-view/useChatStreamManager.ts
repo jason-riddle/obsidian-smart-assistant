@@ -16,6 +16,7 @@ import { getChatModelClient } from '../../core/llm/manager'
 import { ChatMessage } from '../../types/chat'
 import { PromptGenerator } from '../../utils/chat/promptGenerator'
 import { ResponseGenerator } from '../../utils/chat/responseGenerator'
+import { logger } from '../../utils/logger'
 import { ErrorModal } from '../modals/ErrorModal'
 
 type UseChatStreamManagerParams = {
@@ -173,7 +174,7 @@ export function useChatStreamManager({
         }).open()
       } else {
         new Notice(error.message)
-        console.error('Failed to generate response', error)
+        logger.error('useChatStreamManager', 'onError', 'Failed to generate response', error)
       }
     },
   })

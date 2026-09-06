@@ -3,6 +3,7 @@ import {
   SmartComposerSettings,
   smartComposerSettingsSchema,
 } from './setting.types'
+import { logger } from '../../utils/logger'
 
 function migrateSettings(
   data: Record<string, unknown>,
@@ -10,14 +11,22 @@ function migrateSettings(
   let currentData = { ...data }
   let currentVersion = (currentData.version as number) ?? 0
 
+  logger.debug(
+    'settings',
+    'migrateSettings',
+    `Parsing settings, current version: ${currentVersion}`,
+  )
+
   for (const migration of SETTING_MIGRATIONS) {
     if (
       currentVersion >= migration.fromVersion &&
       currentVersion < migration.toVersion &&
       migration.toVersion <= SETTINGS_SCHEMA_VERSION
     ) {
-      console.log(
-        `Migrating settings from ${migration.fromVersion} to ${migration.toVersion}`,
+      logger.info(
+        'settings',
+        'migrateSettings',
+        `Migrated settings from v${migration.fromVersion} to v${migration.toVersion}`,
       )
       currentData = migration.migrate(currentData)
       currentVersion = migration.toVersion
@@ -34,7 +43,12 @@ export function parseSmartComposerSettings(
     const migratedData = migrateSettings(data as Record<string, unknown>)
     return smartComposerSettingsSchema.parse(migratedData)
   } catch (error) {
-    console.warn('Invalid settings provided, using defaults:', error)
+    logger.warn(
+      'settings',
+      'parseSmartComposerSettings',
+      'Invalid settings provided, using defaults',
+      error,
+    )
     return smartComposerSettingsSchema.parse({})
   }
 }

@@ -16,6 +16,7 @@ import { useApp } from '../../../contexts/app-context'
 import { SkillsProvider } from '../../../contexts/skills-context'
 import { MentionableImage } from '../../../types/mentionable'
 import { fuzzySearch } from '../../../utils/fuzzy-search'
+import { logger } from '../../../utils/logger'
 
 import DragDropPaste from './plugins/image/DragDropPastePlugin'
 import ImagePastePlugin from './plugins/image/ImagePastePlugin'
@@ -63,7 +64,7 @@ export default function LexicalContentEditable({
     nodes: [MentionNode],
     editorState: initialEditorState,
     onError: (error) => {
-      console.error(error)
+      logger.error('LexicalContentEditable', 'onError', 'Lexical editor error', error)
     },
   }
 

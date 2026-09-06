@@ -345,3 +345,64 @@ always run immediately.
 - Test files: `*.test.ts` colocated with source files.
 - Mock for `obsidian` module is in `__mocks__/obsidian.ts`.
 - Test environment: `node`.
+
+## Logging
+
+Structured logging is provided by the singleton logger in
+`src/utils/logger.ts`. Import it wherever needed:
+
+```ts
+import { logger } from "../../utils/logger";
+
+logger.info("ModuleName", "functionName", "message");
+logger.warn("ModuleName", "functionName", "message", optionalError);
+logger.error("ModuleName", "functionName", "message", error);
+logger.debug("ModuleName", "functionName", "verbose detail");
+```
+
+### Format
+
+Every log line is formatted as:
+
+```
+[2026-09-05T12:34:56.789Z] [INFO] [ModuleName.functionName] message
+```
+
+- **Timestamp:** ISO8601, UTC.
+- **Level:** `DEBUG` / `INFO` / `WARN` / `ERROR` (uppercased).
+- **Module.function:** the caller's module and function name, passed
+  explicitly (no stack-trace capture, to keep it lightweight).
+- **Message:** the log message. Extra args (e.g. an `Error` object) are
+  forwarded to the underlying `console` method.
+
+### Log levels
+
+The logger has a configurable minimum level (`debug` < `info` < `warn` <
+`error`). Messages below the minimum are not emitted. The default is
+`debug` in development builds and `info` in production builds (driven by
+esbuild's `process.env.NODE_ENV` define). Set the level at runtime:
+
+```ts
+logger.setLevel("warn"); // suppress debug and info
+logger.getLevel();        // -> "warn"
+```
+
+### Conventions
+
+- Use the file's module name (derived from the filename) as the
+  `module` argument and the enclosing function name as the `fn`
+  argument, so logs are grep-able and traceable.
+- Prefer `info` for lifecycle events (plugin load/unload, server
+  connect/disconnect, skill load, response generation start/complete).
+- Use `warn` for recoverable failures (failed tool calls, failed
+  fetches, invalid settings falling back to defaults).
+- Use `error` for unexpected failures and error-handling branches.
+- Use `debug` for verbose detail (per-request tracing, cache state,
+  file reads) — these are off by default in production.
+- Do not use raw `console.log` / `console.error` / `console.warn` — go
+  through the logger so output is consistently formatted and
+  filterable. The only `console.*` calls in the codebase live inside
+  `src/utils/logger.ts`.
+- Don't over-log: focus on lifecycle events, errors, and key decision
+  points. Debug level is for verbose detail.
+

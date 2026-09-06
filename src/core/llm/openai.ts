@@ -12,6 +12,7 @@ import {
   LLMResponseStreaming,
 } from '../../types/llm/response'
 import { LLMProvider } from '../../types/provider.types'
+import { logger } from '../../utils/logger'
 
 import { BaseLLMProvider } from './base'
 import {
@@ -67,7 +68,11 @@ export class OpenAIAuthenticatedProvider extends BaseLLMProvider<
 
       // Ensure choices exist and have at least one choice
       if (!response.choices || response.choices.length === 0) {
-        console.error('No response choices available')
+        logger.error(
+          'OpenAIProvider',
+          'generateResponse',
+          'No response choices available',
+        )
         throw new Error('No response choices available')
       }
 
@@ -78,7 +83,11 @@ export class OpenAIAuthenticatedProvider extends BaseLLMProvider<
         firstChoice.message.content === null ||
         firstChoice.message.content === undefined
       ) {
-        console.error('No content in the first response choice')
+        logger.error(
+          'OpenAIProvider',
+          'generateResponse',
+          'No content in the first response choice',
+        )
         throw new Error('No content in the first response choice')
       }
 
@@ -89,7 +98,7 @@ export class OpenAIAuthenticatedProvider extends BaseLLMProvider<
 
       return finalResponse
     } catch (error) {
-      console.error('Error in generateResponse:', error)
+      logger.error('OpenAIProvider', 'generateResponse', 'Error in generateResponse', error)
       if (error instanceof OpenAI.AuthenticationError) {
         throw new LLMAPIKeyInvalidException(
           'OpenAI API key is invalid. Please update it in settings menu.',
@@ -126,7 +135,7 @@ export class OpenAIAuthenticatedProvider extends BaseLLMProvider<
         options,
       )
     } catch (error) {
-      console.error('Error in streamResponse:', error)
+      logger.error('OpenAIProvider', 'streamResponse', 'Error in streamResponse', error)
       if (error instanceof OpenAI.AuthenticationError) {
         throw new LLMAPIKeyInvalidException(
           'OpenAI API key is invalid. Please update it in settings menu.',

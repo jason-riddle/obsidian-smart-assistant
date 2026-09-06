@@ -10,6 +10,7 @@ import {
   McpTransportType,
   mcpServerParametersSchema,
 } from '../../../types/mcp.types'
+import { logger } from '../../../utils/logger'
 import { ObsidianButton } from '../../common/ObsidianButton'
 import { ObsidianDropdown } from '../../common/ObsidianDropdown'
 import { ObsidianSetting } from '../../common/ObsidianSetting'
@@ -354,7 +355,7 @@ function McpServerFormComponent({
       if (error instanceof Error) {
         new Notice(error.message)
       } else {
-        console.error(error)
+        logger.error('McpServerFormModal', 'saveServer', 'Failed to save MCP server', error)
         new Notice('Failed to save MCP server.')
       }
       return null

@@ -1,6 +1,7 @@
 import { App, normalizePath } from 'obsidian'
 
 import { ChatConversationManager } from '../../utils/chat/chatHistoryManager'
+import { logger } from '../../utils/logger'
 
 import { ChatManager } from './chat/ChatManager'
 import { INITIAL_MIGRATION_MARKER, ROOT_DIR } from './constants'
@@ -51,11 +52,20 @@ async function transferChatHistoryFromLegacy(app: App): Promise<void> {
 
       await oldChatManager.deleteChatConversation(oldChat.id)
     } catch (error) {
-      console.error(`Error migrating chat ${chatMeta.id}:`, error)
+      logger.error(
+        'migrateToJsonDatabase',
+        'transferChatHistoryFromLegacy',
+        `Error migrating chat ${chatMeta.id}`,
+        error,
+      )
     }
   }
 
-  console.log('Chat history migration to JSON database completed')
+  logger.info(
+    'migrateToJsonDatabase',
+    'transferChatHistoryFromLegacy',
+    'Chat history migration to JSON database completed',
+  )
 }
 
 export async function migrateToJsonDatabase(

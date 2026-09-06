@@ -7,6 +7,8 @@ import type {
 } from "@modelcontextprotocol/client"
 import { App, normalizePath } from "obsidian"
 
+import { logger } from "../../utils/logger"
+
 export const OAUTH_REDIRECT_URL = "obsidian://smart-assistant/oauth/callback"
 export const OAUTH_TOKEN_STORE_PATH = ".smtcmp_oauth_tokens.json"
 
@@ -40,6 +42,7 @@ export class OAuthTokenStore {
     if (this.loaded) {
       return
     }
+    logger.debug("OAuthTokenStore", "load", "Loading OAuth token store...")
     try {
       if (await this.app.vault.adapter.exists(this.filePath)) {
         const content = await this.app.vault.adapter.read(this.filePath)
@@ -47,12 +50,18 @@ export class OAuthTokenStore {
         this.cache = new Map(Object.entries(data))
       }
     } catch (error) {
-      console.error("Failed to load OAuth token store:", error)
+      logger.error(
+        "OAuthTokenStore",
+        "load",
+        "Failed to load OAuth token store",
+        error,
+      )
     }
     this.loaded = true
   }
 
   private async persist(): Promise<void> {
+    logger.debug("OAuthTokenStore", "persist", "Persisting OAuth token store...")
     const data: Record<string, ServerOAuthState> = {}
     for (const [key, value] of this.cache) {
       data[key] = value
@@ -61,7 +70,12 @@ export class OAuthTokenStore {
     try {
       await this.app.vault.adapter.write(this.filePath, content)
     } catch (error) {
-      console.error("Failed to persist OAuth token store:", error)
+      logger.error(
+        "OAuthTokenStore",
+        "persist",
+        "Failed to persist OAuth token store",
+        error,
+      )
     }
   }
 
@@ -217,6 +231,11 @@ export class McpOAuthProvider implements OAuthClientProvider {
   }
 
   async redirectToAuthorization(authorizationUrl: URL): Promise<void> {
+    logger.info(
+      "McpOAuthProvider",
+      "redirectToAuthorization",
+      `Redirecting to authorization URL: ${authorizationUrl.toString()}`,
+    )
     window.open(authorizationUrl.toString(), "_blank")
   }
 

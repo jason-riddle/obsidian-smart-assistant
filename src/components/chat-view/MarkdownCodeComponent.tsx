@@ -3,6 +3,7 @@ import { PropsWithChildren, useMemo, useState } from 'react'
 
 import { useApp } from '../../contexts/app-context'
 import { useDarkModeContext } from '../../contexts/dark-mode-context'
+import { logger } from '../../utils/logger'
 import { openMarkdownFile } from '../../utils/obsidian'
 
 import { ObsidianMarkdown } from './ObsidianMarkdown'
@@ -36,7 +37,7 @@ export default function MarkdownCodeComponent({
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
-      console.error('Failed to copy text: ', err)
+      logger.error('MarkdownCodeComponent', 'handleCopy', 'Failed to copy text', err)
     }
   }
 
