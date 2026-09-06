@@ -1,5 +1,4 @@
-import type { Client } from '@modelcontextprotocol/sdk/client/index.js'
-import type { CallToolResult, Tool } from '@modelcontextprotocol/sdk/types'
+import type { CallToolResult, Client, Tool } from '@modelcontextprotocol/client'
 import { z } from 'zod'
 
 export type McpTool = Tool

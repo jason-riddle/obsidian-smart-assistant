@@ -7,7 +7,6 @@ import {
   McpServerState,
   McpServerStatus,
   McpTool,
-  McpToolCallResult,
 } from '../../types/mcp.types'
 import {
   ToolCallResponse,
@@ -204,9 +203,9 @@ export class McpManager {
       }
     }
 
-    const { Client } = await import('@modelcontextprotocol/sdk/client/index.js')
+    const { Client } = await import('@modelcontextprotocol/client')
     const { StdioClientTransport } = await import(
-      '@modelcontextprotocol/sdk/client/stdio.js'
+      '@modelcontextprotocol/client/stdio'
     )
     const client = new Client({ name, version: '1.0.0' })
 
@@ -390,16 +389,15 @@ export class McpManager {
       const parsedArgs: Record<string, unknown> | undefined =
         typeof args === 'string' ? (args === '' ? {} : JSON.parse(args)) : args
 
-      const result = (await client.callTool(
+      const result = await client.callTool(
         {
           name: toolName,
           arguments: parsedArgs,
         },
-        undefined,
         {
           signal: compositeSignal,
         },
-      )) as McpToolCallResult
+      )
 
       if (result.content.length === 0) {
         throw new Error('Tool call returned no content')
