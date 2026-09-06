@@ -29,7 +29,13 @@ function parseFrontmatter(content: string): {
     const colonIndex = line.indexOf(':')
     if (colonIndex === -1) continue
     const key = line.slice(0, colonIndex).trim()
-    const value = line.slice(colonIndex + 1).trim()
+    let value = line.slice(colonIndex + 1).trim()
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1)
+    }
     frontmatter[key] = value
   }
   return { frontmatter, body }

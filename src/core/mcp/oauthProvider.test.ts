@@ -138,15 +138,17 @@ describe('McpOAuthProvider', () => {
     })
 
     it('should call window.open on redirectToAuthorization', async () => {
-      const openSpy = jest.spyOn(window, 'open').mockImplementation(() => null)
+      const mockOpen = jest.fn(() => null)
+      global.window = { open: mockOpen } as unknown as Window &
+        typeof globalThis
       await provider.redirectToAuthorization(
         new URL('https://auth.example.com/authorize'),
       )
-      expect(openSpy).toHaveBeenCalledWith(
+      expect(mockOpen).toHaveBeenCalledWith(
         'https://auth.example.com/authorize',
         '_blank',
       )
-      openSpy.mockRestore()
+      delete (global as { window?: unknown }).window
     })
 
     it('should invalidate all credentials', async () => {

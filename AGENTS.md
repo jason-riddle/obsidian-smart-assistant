@@ -21,10 +21,11 @@ npm run type:check   # tsc --noEmit
 npm run test         # jest — DO NOT RUN without explicit user approval
 ```
 
-> **WARNING: Running tests (`npm run test`) is BANNED unless the user
-> gives explicit approval.** Running tests causes the machine to run
-> out of memory. This must be investigated later. Do NOT run
-> `npm run test`, `jest`, or any test command without asking first.
+> **WARNING: Running the full test suite (`npm run test` / `jest`)
+> locally is BANNED.** It causes the machine to run out of memory.
+> Use CI (GitHub Actions) to run the full test suite instead.
+> Individual test files may be run locally with explicit user
+> approval (e.g. `npx jest src/utils/common/chunk-array.test.ts`).
 
 ## Architecture Overview
 
@@ -490,6 +491,30 @@ The required assets are:
 ## Notes & Quirks
 
 Discovered during development. Append here as new quirks are found.
+
+- **CI workflow triggers** — The CI workflow
+  (`.github/workflows/ci.yml`) runs on `push` to `main`,
+  `pull_request` to `main`, and `workflow_dispatch`. Push-triggered
+  runs may take several seconds to appear in `gh run list` after a
+  push. If a push-triggered run does not appear, trigger manually:
+  `gh workflow run ci.yml --ref main`.
+- **Jest test environment is `node`, not `jsdom`** — Tests that
+  reference browser globals (`window`, `document`, etc.) must mock
+  them explicitly. For example, `oauthProvider.test.ts` sets
+  `global.window = { open: mockOpen }` before testing
+  `redirectToAuthorization` and cleans up afterwards.
+- **Skill frontmatter parser strips surrounding quotes** —
+  `parseFrontmatter` in `skillManager.ts` strips surrounding single or
+  double quotes from frontmatter values. SKILL.md frontmatter like
+  `name: "my-skill"` is parsed as `my-skill` (no quotes).
+- **`metadata` field accepts string or record** — The
+  `skillFrontmatterSchema` `metadata` field is a Zod union of
+  `z.record(z.string(), z.string())` and `z.string()`, because the
+  simple frontmatter parser produces strings, not nested objects.
+- **`disabledSkills` in settings test** — The settings test
+  (`settings.test.ts`) must include `disabledSkills: []` in the
+  expected output of `parseSmartComposerSettings({})` (added in
+  schema v20).
 
 - **"Etc" section renamed to "Miscellaneous"** — the settings section
   header at the bottom of the settings tab was labeled "Etc". Renamed

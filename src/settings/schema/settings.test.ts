@@ -27,6 +27,8 @@ describe('parseSmartComposerSettings', () => {
         servers: [],
       },
 
+      disabledSkills: [],
+
       chatOptions: {
         includeCurrentFileContent: true,
         enableTools: true,
