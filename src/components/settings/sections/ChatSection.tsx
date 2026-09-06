@@ -33,22 +33,20 @@ export function ChatSection() {
         />
       </ObsidianSetting>
 
-      {settings.showHiddenFeatures && (
-        <ObsidianSetting
-          name="Inject timestamp and day into system prompt"
-          desc="When enabled, the current ISO8601 timestamp and day of week are injected into the system prompt. This is currently disabled for debugging."
-        >
-          <ObsidianToggle
-            value={settings.injectTimestamp}
-            onChange={async (value) => {
-              await setSettings({
-                ...settings,
-                injectTimestamp: value,
-              })
-            }}
-          />
-        </ObsidianSetting>
-      )}
+      <ObsidianSetting
+        name="Inject timestamp and day into system prompt"
+        desc="When enabled, the current ISO8601 timestamp and day of week are injected into the system prompt."
+      >
+        <ObsidianToggle
+          value={settings.injectTimestamp}
+          onChange={async (value) => {
+            await setSettings({
+              ...settings,
+              injectTimestamp: value,
+            })
+          }}
+        />
+      </ObsidianSetting>
 
       <ObsidianSetting
         name="Chat model"

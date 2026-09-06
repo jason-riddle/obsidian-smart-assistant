@@ -4,7 +4,7 @@ import { toggleSkillEnabledLogic } from './toggleSkillEnabledLogic'
 
 function makeSettings(disabledSkills: string[] = []): SmartAssistantSettings {
   return {
-    version: 21,
+    version: 22,
     providers: [],
     chatModels: [],
     chatModelId: 'gpt-5.6-sol',

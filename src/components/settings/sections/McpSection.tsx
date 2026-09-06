@@ -3,7 +3,6 @@ import {
   ChevronDown,
   ChevronUp,
   CircleMinus,
-  Clock,
   Edit,
   Loader2,
   Trash2,
@@ -31,55 +30,6 @@ import {
 type McpSectionProps = {
   app: App
   plugin: SmartAssistantPlugin
-}
-
-function getAuthSummary(server: McpServerState): string | null {
-  if (
-    server.config.parameters.type !== 'http' &&
-    server.config.parameters.type !== 'sse'
-  ) {
-    return null
-  }
-  const auth = server.config.parameters.auth
-  if (!auth) {
-    return null
-  }
-  if (auth.type === 'bearer') {
-    return 'Bearer token'
-  }
-  if (auth.type === 'oauth-static') {
-    if (server.status === McpServerStatus.Connected) {
-      return 'OAuth 2.0: Connected'
-    }
-    if (server.status === McpServerStatus.AwaitingAuth) {
-      return 'OAuth 2.0: Awaiting authorization'
-    }
-    return 'OAuth 2.0: Not connected'
-  }
-  if (auth.type === 'oauth') {
-    if (server.status === McpServerStatus.Connected) {
-      return 'OAuth 2.1 + DCR: Connected'
-    }
-    if (server.status === McpServerStatus.AwaitingAuth) {
-      return 'OAuth 2.1 + DCR: Awaiting authorization'
-    }
-    return 'OAuth 2.1 + DCR: Not connected'
-  }
-  return null
-}
-
-function getAuthenticationLabel(server: McpServerState): string {
-  if (
-    server.config.parameters.type !== 'http' &&
-    server.config.parameters.type !== 'sse'
-  ) {
-    return 'None'
-  }
-  const auth = server.config.parameters.auth
-  if (!auth) return 'None'
-  if (auth.type === 'bearer') return 'Bearer token'
-  if (auth.type === 'oauth-static') return 'OAuth 2.0'
-  return 'OAuth 2.1 + DCR'
 }
 
 export function McpSection({ app, plugin }: McpSectionProps) {
@@ -137,8 +87,6 @@ export function McpSection({ app, plugin }: McpSectionProps) {
           <div className="smtcmp-mcp-servers-container">
             <div className="smtcmp-mcp-servers-header">
               <div>Server</div>
-              <div>Transport</div>
-              <div>Authentication</div>
               <div>Status</div>
               <div>Enabled</div>
               <div>Actions</div>
@@ -220,20 +168,7 @@ function McpServerComponent({
   return (
     <div className="smtcmp-mcp-server">
       <div className="smtcmp-mcp-server-row">
-        <div className="smtcmp-mcp-server-name">
-          <span>{server.name}</span>
-          {getAuthSummary(server) && (
-            <span className="smtcmp-mcp-server-transport">
-              {getAuthSummary(server)}
-            </span>
-          )}
-        </div>
-        <div className="smtcmp-mcp-server-transport">
-          {server.config.parameters.type}
-        </div>
-        <div className="smtcmp-mcp-server-transport">
-          {getAuthenticationLabel(server)}
-        </div>
+        <div className="smtcmp-mcp-server-name">{server.name}</div>
         <div className="smtcmp-mcp-server-status">
           <McpServerStatusBadge status={server.status} />
         </div>
@@ -275,21 +210,8 @@ function McpServerComponent({
 function ExpandedServerInfo({ server }: { server: McpServerState }) {
   if (
     server.status === McpServerStatus.Disconnected ||
-    server.status === McpServerStatus.Connecting ||
-    server.status === McpServerStatus.AwaitingAuth
+    server.status === McpServerStatus.Connecting
   ) {
-    if (server.status === McpServerStatus.AwaitingAuth) {
-      return (
-        <div className="smtcmp-server-expanded-info">
-          <div>
-            <div className="smtcmp-server-expanded-info-header">OAuth</div>
-            <div className="smtcmp-server-error-message">
-              Awaiting authorization. Complete the OAuth flow in your browser.
-            </div>
-          </div>
-        </div>
-      )
-    }
     return null
   }
 
@@ -338,11 +260,6 @@ function McpServerStatusBadge({ status }: { status: McpServerStatus }) {
       icon: <CircleMinus size={14} />,
       label: 'Disconnected',
       statusClass: 'smtcmp-mcp-server-status-badge--disconnected',
-    },
-    [McpServerStatus.AwaitingAuth]: {
-      icon: <Clock size={16} />,
-      label: 'Awaiting Auth',
-      statusClass: 'smtcmp-mcp-server-status-badge--awaiting-auth',
     },
   }
 

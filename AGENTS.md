@@ -73,7 +73,7 @@ npm run test         # jest — DO NOT RUN without explicit user approval
   settings (`smartComposerSettingsSchema`).
 - **`src/settings/schema/settings.ts`** — Settings parsing and validation.
 - **`src/settings/schema/migrations/`** — Versioned migration chain.
-  - `index.ts` — Exports `SETTINGS_SCHEMA_VERSION` (currently 21) and the
+  - `index.ts` — Exports `SETTINGS_SCHEMA_VERSION` (currently 22) and the
     `SETTING_MIGRATIONS` array.
   - Each file `N_to_(N+1).ts` contains a single migration function.
 - **`src/settings/SettingTab.tsx`** — Obsidian settings UI (React).
@@ -239,7 +239,7 @@ transport:
 ## Settings System
 
 Settings are defined with Zod schemas and migrated through a versioned
-chain. The current schema version is `SETTINGS_SCHEMA_VERSION` (20).
+chain. The current schema version is `SETTINGS_SCHEMA_VERSION` (22).
 
 ### Adding a new settings migration
 

@@ -3,14 +3,9 @@ import { App, Platform } from 'obsidian'
 
 import { SmartAssistantSettings } from '../../settings/schema/setting.types'
 import {
-  McpClient,
-  McpHttpParameters,
   McpServerConfig,
-  McpServerParameters,
   McpServerState,
   McpServerStatus,
-  McpSseParameters,
-  McpStdioParameters,
   McpTool,
 } from '../../types/mcp.types'
 import {
@@ -19,57 +14,35 @@ import {
 } from '../../types/tool-call.types'
 import { logger } from '../../utils/logger'
 
-import { BearerAuthProvider } from './bearerAuthProvider'
 import { InvalidToolNameException, McpNotAvailableException } from './exception'
-import { McpOAuthProvider, OAuthTokenStore } from './oauthProvider'
 import {
   getToolName,
   parseToolName,
   validateServerName,
 } from './tool-name-utils'
 
-type CreateClientResult =
-  | McpClient
-  | Error
-  | { awaitingAuth: true; state: string }
-
-type PendingOAuthFlow = {
-  serverName: string
-  transport:
-    | import('@modelcontextprotocol/client').StreamableHTTPClientTransport
-    | import('@modelcontextprotocol/client').SSEClientTransport
-  provider: McpOAuthProvider
-  serverConfig: McpServerConfig
-}
-
-type AuthProviderShape =
-  | { kind: 'none' }
-  | { kind: 'bearer'; provider: BearerAuthProvider }
-  | { kind: 'oauth'; provider: McpOAuthProvider }
-
 export class McpManager {
-  static readonly TOOL_NAME_DELIMITER = '__' // Delimiter for tool name construction (serverName__toolName)
+  static readonly TOOL_NAME_DELIMITER = '__'
 
-  public readonly disabled = !Platform.isDesktop // MCP should be disabled on mobile since it doesn't support node.js
+  public readonly disabled = !Platform.isDesktop
 
   private settings: SmartAssistantSettings
   private unsubscribeFromSettings: () => void
   private defaultEnv: Record<string, string>
-  private oauthTokenStore: OAuthTokenStore | null = null
-  private pendingOAuthFlows: Map<string, PendingOAuthFlow> = new Map()
-  private settingsUpdateQueue: Promise<void> = Promise.resolve()
 
-  private servers: McpServerState[] = [] // IMPORTANT: Always use this.updateServers() to update this array
+  private servers: McpServerState[] = []
   private activeToolCalls: Map<string, AbortController> = new Map()
   private allowedToolsByConversation: Map<string, Set<string>> = new Map()
   private subscribers = new Set<(servers: McpServerState[]) => void>()
 
   private availableToolsCache: McpTool[] | null = null
 
+  private settingsUpdateQueue: Promise<void> = Promise.resolve()
+
   constructor({
     settings,
     registerSettingsListener,
-    app,
+    app: _app,
   }: {
     settings: SmartAssistantSettings
     registerSettingsListener: (
@@ -78,7 +51,6 @@ export class McpManager {
     app: App
   }) {
     this.settings = settings
-    this.oauthTokenStore = new OAuthTokenStore(app)
     this.unsubscribeFromSettings = registerSettingsListener((newSettings) => {
       this.handleSettingsUpdate(newSettings)
     })
@@ -96,15 +68,9 @@ export class McpManager {
       `Initializing MCP manager, ${serverCount} servers configured`,
     )
 
-    if (this.oauthTokenStore) {
-      await this.oauthTokenStore.load()
-    }
-
-    // Get default environment variables
     const { shellEnvSync } = await import('shell-env')
     this.defaultEnv = shellEnvSync()
 
-    // Create MCP servers
     const servers = await Promise.all(
       this.settings.mcp.servers.map((serverConfig) =>
         this.connectServer(serverConfig),
@@ -114,7 +80,6 @@ export class McpManager {
   }
 
   public cleanup() {
-    // Disconnect all clients
     void Promise.all(
       this.servers
         .filter((s) => s.status === McpServerStatus.Connected)
@@ -166,7 +131,6 @@ export class McpManager {
           isEqual(existingServer.config.parameters, serverConfig.parameters) &&
           existingServer.config.enabled === serverConfig.enabled
         ) {
-          // Server is already up to date
           return {
             ...existingServer,
             config: serverConfig,
@@ -211,7 +175,6 @@ export class McpManager {
         ? newServersOrUpdater(currentServers)
         : (newServersOrUpdater ?? currentServers)
 
-    // Find clients that need to be disconnected
     const clientsToDisconnect = currentServers
       .filter((server) => server.status === McpServerStatus.Connected)
       .map((server) => server.client)
@@ -224,14 +187,13 @@ export class McpManager {
           ),
       )
 
-    // Disconnect clients in the background
     if (clientsToDisconnect.length > 0) {
       void Promise.all(clientsToDisconnect.map((client) => client.close()))
     }
 
     this.servers = nextServers
-    this.availableToolsCache = null // Invalidate available tools cache
-    this.notifySubscribers() // Should call after invalidating the cache
+    this.notifySubscribers()
+    this.availableToolsCache = null
   }
 
   private async connectServer(
@@ -242,12 +204,6 @@ export class McpManager {
     }
 
     const { id: name, parameters: serverParams, enabled } = serverConfig
-
-    logger.debug(
-      'McpManager',
-      'connectServer',
-      `Connecting to server: ${name}, transport: ${serverParams.type}`,
-    )
 
     if (!enabled) {
       return {
@@ -273,35 +229,39 @@ export class McpManager {
       }
     }
 
-    const clientResult = await this.createClientForTransport(
-      name,
-      serverParams,
-      serverConfig,
+    const { Client } = await import('@modelcontextprotocol/client')
+    const { StdioClientTransport } = await import(
+      '@modelcontextprotocol/client/stdio'
     )
+    const client = new Client({ name, version: '1.0.0' })
 
-    if (clientResult instanceof Error) {
+    try {
+      await client.connect(
+        new StdioClientTransport({
+          command: serverParams.command,
+          args: serverParams.args,
+          env: {
+            ...this.defaultEnv,
+            ...(serverParams.env ?? {}),
+          },
+        }),
+      )
+    } catch (error) {
+      await client.close().catch(() => {})
       logger.warn(
         'McpManager',
         'connectServer',
-        `Failed to connect to server: ${name}: ${clientResult.message}`,
+        `Failed to connect to server: ${name}: ${error instanceof Error ? error.message : String(error)}`,
       )
       return {
         name,
         config: serverConfig,
         status: McpServerStatus.Error,
-        error: clientResult,
+        error: new Error(
+          `Failed to connect to MCP server ${name}: ${error instanceof Error ? error.message : String(error)}`,
+        ),
       }
     }
-
-    if (typeof clientResult === 'object' && 'awaitingAuth' in clientResult) {
-      return {
-        name,
-        config: serverConfig,
-        status: McpServerStatus.AwaitingAuth,
-      }
-    }
-
-    const client = clientResult
 
     try {
       const toolList = await client.listTools()
@@ -329,276 +289,6 @@ export class McpManager {
         ),
       }
     }
-  }
-
-  private async createClientForTransport(
-    name: string,
-    serverParams: McpServerParameters,
-    serverConfig: McpServerConfig,
-  ): Promise<CreateClientResult> {
-    if (serverParams.type === 'stdio') {
-      return this.createStdioClient(name, serverParams)
-    }
-    if (serverParams.type === 'http') {
-      return this.createHttpClient(name, serverParams, serverConfig)
-    }
-    return this.createSseClient(name, serverParams, serverConfig)
-  }
-
-  private async createStdioClient(
-    name: string,
-    serverParams: McpStdioParameters,
-  ): Promise<McpClient | Error> {
-    const { Client } = await import('@modelcontextprotocol/client')
-    const { StdioClientTransport } = await import(
-      '@modelcontextprotocol/client/stdio'
-    )
-    const client = new Client({ name, version: '1.0.0' })
-    try {
-      await client.connect(
-        new StdioClientTransport({
-          command: serverParams.command,
-          args: serverParams.args,
-          env: {
-            ...this.defaultEnv,
-            ...(serverParams.env ?? {}),
-          },
-        }),
-      )
-      return client
-    } catch (error) {
-      await client.close().catch(() => {})
-      return new Error(
-        `Failed to connect to MCP server ${name}: ${error instanceof Error ? error.message : String(error)}`,
-      )
-    }
-  }
-
-  private buildAuthProvider(
-    name: string,
-    serverParams: McpHttpParameters | McpSseParameters,
-  ): AuthProviderShape {
-    const auth = serverParams.auth
-    if (auth === undefined) {
-      return { kind: 'none' }
-    }
-    if (auth.type === 'bearer') {
-      return { kind: 'bearer', provider: new BearerAuthProvider(auth.token) }
-    }
-    if (auth.type === 'oauth-static') {
-      if (!this.oauthTokenStore) {
-        return { kind: 'none' }
-      }
-      const provider = McpOAuthProvider.createStatic(
-        name,
-        this.oauthTokenStore,
-        {
-          clientId: auth.clientId,
-          clientSecret: auth.clientSecret,
-          authorizationUrl: auth.authorizationUrl,
-          tokenUrl: auth.tokenUrl,
-        },
-      )
-      return { kind: 'oauth', provider }
-    }
-    if (!this.oauthTokenStore) {
-      return { kind: 'none' }
-    }
-    return {
-      kind: 'oauth',
-      provider: new McpOAuthProvider(name, this.oauthTokenStore),
-    }
-  }
-
-  private async createHttpClient(
-    name: string,
-    serverParams: McpHttpParameters,
-    serverConfig: McpServerConfig,
-  ): Promise<CreateClientResult> {
-    const {
-      Client,
-      StreamableHTTPClientTransport,
-      SSEClientTransport,
-      UnauthorizedError,
-    } = await import('@modelcontextprotocol/client')
-    const headers = serverParams.headers ?? {}
-    const url = new URL(serverParams.url)
-    const auth = this.buildAuthProvider(name, serverParams)
-
-    const tryConnect = async (
-      TransportClass:
-        | typeof StreamableHTTPClientTransport
-        | typeof SSEClientTransport,
-    ): Promise<CreateClientResult> => {
-      const opts: Record<string, unknown> = { requestInit: { headers } }
-      if (auth.kind !== 'none') {
-        opts.authProvider = auth.provider
-      }
-      const transport = new TransportClass(url, opts)
-      const client = new Client({ name, version: '1.0.0' })
-      try {
-        await client.connect(transport)
-        return client
-      } catch (error) {
-        await client.close().catch(() => {})
-        if (auth.kind === 'oauth' && error instanceof UnauthorizedError) {
-          return this.registerPendingOAuthFlow(
-            name,
-            transport,
-            auth.provider,
-            serverConfig,
-          )
-        }
-        return new Error(
-          `Failed to connect to MCP server ${name}: ${error instanceof Error ? error.message : String(error)}`,
-        )
-      }
-    }
-
-    const result = await tryConnect(StreamableHTTPClientTransport)
-    if (!(result instanceof Error)) {
-      return result
-    }
-
-    const fallbackResult = await tryConnect(SSEClientTransport)
-    if (fallbackResult instanceof Error) {
-      return new Error(
-        `${result.message}; SSE fallback failed: ${fallbackResult.message}`,
-      )
-    }
-    return fallbackResult
-  }
-
-  private async createSseClient(
-    name: string,
-    serverParams: McpSseParameters,
-    serverConfig: McpServerConfig,
-  ): Promise<CreateClientResult> {
-    const { Client, SSEClientTransport, UnauthorizedError } = await import(
-      '@modelcontextprotocol/client'
-    )
-    const headers = serverParams.headers ?? {}
-    const url = new URL(serverParams.url)
-    const auth = this.buildAuthProvider(name, serverParams)
-
-    const opts: Record<string, unknown> = { requestInit: { headers } }
-    if (auth.kind !== 'none') {
-      opts.authProvider = auth.provider
-    }
-    const transport = new SSEClientTransport(url, opts)
-    const client = new Client({ name, version: '1.0.0' })
-    try {
-      await client.connect(transport)
-      return client
-    } catch (error) {
-      await client.close().catch(() => {})
-      if (auth.kind === 'oauth' && error instanceof UnauthorizedError) {
-        return this.registerPendingOAuthFlow(
-          name,
-          transport,
-          auth.provider,
-          serverConfig,
-        )
-      }
-      return new Error(
-        `Failed to connect to MCP server ${name}: ${error instanceof Error ? error.message : String(error)}`,
-      )
-    }
-  }
-
-  private async registerPendingOAuthFlow(
-    name: string,
-    transport:
-      | import('@modelcontextprotocol/client').StreamableHTTPClientTransport
-      | import('@modelcontextprotocol/client').SSEClientTransport,
-    provider: McpOAuthProvider,
-    serverConfig: McpServerConfig,
-  ): Promise<CreateClientResult> {
-    try {
-      const state = await provider.state()
-      this.pendingOAuthFlows.set(state, {
-        serverName: name,
-        transport,
-        provider,
-        serverConfig,
-      })
-      return { awaitingAuth: true, state }
-    } catch {
-      return new Error(
-        `OAuth flow initiated for ${name} but no state was saved`,
-      )
-    }
-  }
-
-  public async completeOAuthFlow(
-    state: string,
-    params: URLSearchParams,
-  ): Promise<void> {
-    if (this.disabled) {
-      throw new McpNotAvailableException()
-    }
-
-    const pending = this.pendingOAuthFlows.get(state)
-    if (!pending) {
-      throw new Error(`No pending OAuth flow for state: ${state}`)
-    }
-    this.pendingOAuthFlows.delete(state)
-
-    const { serverName, transport, serverConfig } = pending
-
-    try {
-      await transport.finishAuth(params)
-
-      const server = await this.connectServer(serverConfig)
-      this.updateServers((prevServers) =>
-        prevServers.map((prevServer) =>
-          prevServer.name === serverName ? server : prevServer,
-        ),
-      )
-      logger.info(
-        'McpManager',
-        'completeOAuthFlow',
-        `OAuth flow completed for server: ${serverName}`,
-      )
-    } catch (error) {
-      logger.warn(
-        'McpManager',
-        'completeOAuthFlow',
-        `OAuth flow failed for server: ${serverName}: ${error instanceof Error ? error.message : String(error)}`,
-      )
-      throw error
-    }
-  }
-
-  public async reconnectServer(serverName: string): Promise<void> {
-    if (this.disabled) {
-      throw new McpNotAvailableException()
-    }
-
-    const serverConfig = this.settings.mcp.servers.find(
-      (s) => s.id === serverName,
-    )
-    if (!serverConfig) {
-      return
-    }
-
-    this.updateServers((prevServers) =>
-      prevServers.map((prevServer) =>
-        prevServer.name === serverName
-          ? {
-              ...prevServer,
-              status: McpServerStatus.Connecting,
-            }
-          : prevServer,
-      ),
-    )
-
-    const server = await this.connectServer(serverConfig)
-    this.updateServers((prevServers) =>
-      prevServers.map((prevServer) =>
-        prevServer.name === serverName ? server : prevServer,
-      ),
-    )
   }
 
   public async listAvailableTools(): Promise<McpTool[]> {
@@ -659,7 +349,6 @@ export class McpManager {
     requestToolName: string
     conversationId?: string
   }): boolean {
-    // Check if the tool is allowed for the conversation
     if (conversationId) {
       if (
         this.allowedToolsByConversation
@@ -791,7 +480,6 @@ export class McpManager {
         }
       }
 
-      // Handle other errors
       logger.warn(
         'McpManager',
         'callTool',

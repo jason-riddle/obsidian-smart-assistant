@@ -53,13 +53,6 @@ export default class SmartAssistantPlugin extends Plugin {
     // This adds a settings tab so the user can configure various aspects of the plugin
     this.addSettingTab(new SmartAssistantSettingTab(this.app, this))
 
-    this.registerObsidianProtocolHandler(
-      'smart-assistant/oauth/callback',
-      async (params) => {
-        await this.handleOAuthCallback(params)
-      },
-    )
-
     void this.migrateToJsonStorage()
   }
 
@@ -210,39 +203,5 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
     new Notice('Reloading "smart-assistant" due to migration', 1000)
     leaves[0].detach()
     await this.activateChatView()
-  }
-
-  private async handleOAuthCallback(params: {
-    action: string
-    [key: string]: string | 'true'
-  }): Promise<void> {
-    const urlParams = new URLSearchParams()
-    for (const [key, value] of Object.entries(params)) {
-      if (key !== 'action') {
-        urlParams.set(key, String(value))
-      }
-    }
-
-    const state = urlParams.get('state')
-    if (!state) {
-      new Notice('OAuth callback missing state parameter')
-      return
-    }
-
-    try {
-      const mcpManager = await this.getMcpManager()
-      await mcpManager.completeOAuthFlow(state, urlParams)
-      new Notice('MCP server authentication successful')
-    } catch (error) {
-      logger.error(
-        'main',
-        'handleOAuthCallback',
-        'MCP OAuth callback error',
-        error,
-      )
-      new Notice(
-        `MCP server authentication failed: ${error instanceof Error ? error.message : String(error)}`,
-      )
-    }
   }
 }

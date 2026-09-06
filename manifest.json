@@ -1,7 +1,7 @@
 {
   "id": "smart-assistant",
   "name": "Smart Assistant",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "minAppVersion": "0.15.0",
   "description": "AI chat with note context, smart writing assistance, and one-click edits for your vault. (Forked by Jason Riddle)",
   "author": "Jason Riddle",
