@@ -1,6 +1,6 @@
 {
   "name": "obsidian-smart-assistant",
-  "version": "1.2.9",
+  "version": "2.0.1",
   "description": "Smart Assistant for Obsidian",
   "main": "main.js",
   "scripts": {
